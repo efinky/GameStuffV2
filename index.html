@@ -47,15 +47,12 @@
             let timestamp = performance.now();
             let imageArray = ['wall', 'grass', 'path', 'water'];
             function startup() {
-                console.log("PRINT SOMETHING");
                 updateCanvasSize(document, document.getElementById('canvas'));
                 document.addEventListener("keydown", (event) => {
                     keystate[event.keyCode] = true;
-                    console.log("keydown " + event.keyCode);
                 });
                 document.addEventListener("keyup", (event) => {
                     keystate[event.keyCode] = false;
-                    console.log("keyup " + event.keyCode);
                 });
                 window.addEventListener('resize', () => {
                     updateCanvasSize(document, document.getElementById('canvas'));
@@ -69,35 +66,49 @@
                 let speed = 3*64*dt;
                 let canvas = document.getElementById('canvas');
                 let ctx = canvas.getContext('2d');
+                
+                let viewportX = x - canvas.width/2;
+                let viewportY = y - canvas.height/2;
+                if (viewportX < 0) {
+                    viewportX = 0;
+                }
+                else if (viewportX + canvas.width >= (map[0].length*64)) {
+                    viewportX = canvas.width + (map[0].length*64);
+
+                }
+                if (viewportY < 0) {
+                    viewportY = 0;
+                }
+                else if (viewportY + canvas.height >= (map.length*64)) {
+                    viewportY = canvas.height + map.length*64;
+                }
+                
+
                 for (let i = 0; i < map.length; i++) {
                     for (let j = 0; j < map[0].length; j++) {
                         
-                        ctx.drawImage(document.getElementById(imageArray[map[i][j]]), j*64 - x, i*64 - y);
+                        ctx.drawImage(document.getElementById(imageArray[map[i][j]]), j*64 - viewportX, i*64 - viewportY);
 
                     }
                 }
             
                 // Draw Person
-                ctx.drawImage(document.getElementById('person'), canvas.width/2 -32, canvas.height/2 -32);
+                ctx.drawImage(document.getElementById('person'), x - viewportX, y - viewportY);
                 //left arrow
                 if (keystate[37]) {
                     x -= speed;
-                    console.log("left");
                 }
                 //right arrow
                 if (keystate[39]) {
                     x += speed;
-                    console.log("right");
                 }
                 //up arrow
                 if(keystate[38]) {
                     y -= speed;
-                    console.log("up");
                 }
                 //down arrow
                 if (keystate[40]) {
                     y += speed;
-                    console.log("down");
                 }
                 window.requestAnimationFrame(draw);
             }
