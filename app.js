@@ -24,7 +24,7 @@ export const run = () => {
     let timestamp = performance.now();
     let imageArray = ['wall', 'grass', 'path', 'water'];
 
-    
+    //haha I am in your codes!
     function draw(now) {
         
         let dt = (now - timestamp)/1000;
@@ -37,23 +37,18 @@ export const run = () => {
         let canvasSize = new Vector2d(canvas.width, canvas.height);
         let mapRect = new Rect(new Vector2d(0,0), mapSize.sub(canvasSize));
         
-        let viewport = pos.sub(canvasSize.scale(0.5));
+        let viewport = pos.sub(canvasSize.scale(0.5)).clamp(mapRect);
 
-        //make this more intuitive (maybe viewport.clamp(mapRect))
-        mapRect.clamp(viewport);
+        //convert rect and vector2djs to classes.
         
-
-        //replace with eachgridpoint // mapRect.eachGridPoint?
-        for (let i = 0; i < map.length; i++) {
-            for (let j = 0; j < map[0].length; j++) {
-                
-                ctx.drawImage(document.getElementById(imageArray[map[i][j]]), j*64 - viewport.x, i*64 - viewport.y);
-
-            }
-        }
+        //make map tile class that contains tiles, speed and such (or terrain type)
+        let maptileSize = new Vector2d(map[0].length, map.length);
+        Vector2d.fromScalar(0).eachGridPoint(maptileSize, (p) => {
+            ctx.drawImage(document.getElementById(imageArray[p.mapLookup(map)]), ...p.scale(64).sub(viewport).arr());
+        });
     
         // Draw Person
-        ctx.drawImage(document.getElementById('person'), pos.x - viewport.x, pos.y - viewport.y);
+        ctx.drawImage(document.getElementById('person'), ...pos.sub(viewport).arr());
         //left arrow
         let mySpeed = currentSpeed(pos, speed);
         let myVelocity = new Vector2d(0,0);
@@ -76,18 +71,16 @@ export const run = () => {
         if (isWalkable(newPos) && isWalkable(newPos.add(Vector2d.fromScalar(32))))
         {
             pos = newPos;
-            console.log("WALK");
-            console.log("newpos", newPos, "pos", pos);
         }
         window.requestAnimationFrame(draw);
     }
 
     function isWalkable(pos) {
-        let tile = imageArray[map[Math.floor(pos.y/64)][Math.floor(pos.x/64)]];
+        let tile = imageArray[pos.scale(1/64).mapLookup(map)];
         return (tile == "grass" || tile == "path" || tile == "water")                    
     }
     function currentSpeed(pos, speed) {
-        let tile = imageArray[map[Math.floor((pos.y/64)+.25)][Math.floor((pos.x/64)+.25)]];
+        let tile = imageArray[pos.scale(1/64).add(Vector2d.fromScalar(0.25)).mapLookup(map)];
         if (tile == "grass") {
             speed -= speed*.4;
         }

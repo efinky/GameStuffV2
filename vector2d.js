@@ -5,6 +5,28 @@ export function Vector2d(x, y) {
 }
 
 Vector2d.setupPrototype = function(f) {
+  f.prototype.arr = function() {
+    return [this.x, this.y];
+  }
+  f.prototype.clamp = function(rect) {
+    const vect = new this.constructor(this.x , this.y)
+    if (vect.x < rect.tl.x) {
+      vect.x = rect.tl.x;
+    }
+    else if (vect.x >= rect.br.x) {
+        vect.x = rect.br.x;
+    }
+    if (vect.y < rect.tl.y) {
+        vect.y = rect.tl.y;
+    }
+    else if (vect.y  >= rect.br.y) {
+        vect.y = rect.br.y;
+    }
+    return vect;
+  }
+  f.prototype.mapLookup = function(map) {
+    return map[Math.floor(this.y)][Math.floor(this.x)];
+  }
   f.prototype.add = function (other) {
     return new this.constructor(this.x + other.x, this.y + other.y);
   };
@@ -129,7 +151,7 @@ Vector2d.setupPrototype = function(f) {
   f.prototype.directionTo = function (other) {
     return other.sub(this).normalize();
   };
-  f.prototype.eachGridPoint = function(f, to) {
+  f.prototype.eachGridPoint = function(to, f) {
     var diff = to.sub(this);
     for (var x = 0; x < diff.x; x++) {
       for (var y = 0; y < diff.y; y++) {
@@ -151,6 +173,7 @@ Vector2d.setupPrototype = function(f) {
   };
 };
 
+
 Vector2d.fromScalar = function (scalar) {
   return new Vector2d(scalar, scalar);
 };
@@ -159,5 +182,6 @@ Vector2d.rehydrate = function (obj) {
   obj.__proto__ = Vector2d.prototype;
   return obj;
 }
+
 
 Vector2d.setupPrototype(Vector2d);

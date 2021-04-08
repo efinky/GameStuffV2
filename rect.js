@@ -41,18 +41,3 @@ Rect.prototype.height = function() {
 Rect.prototype.center = function() {
   return this.tl.add(this.br).scale(0.5);
 }
-Rect.prototype.clamp = function(vect) {
-  if (vect.x < this.tl.x) {
-    vect.x = this.tl.x;
-  }
-  else if (vect.x >= this.br.x) {
-      vect.x = this.br.x;
-  }
-  if (vect.y < this.tl.y) {
-      vect.y = this.tl.y;
-  }
-  else if (vect.y  >= this.br.y) {
-      vect.y = this.br.y;
-  }
-
-}
