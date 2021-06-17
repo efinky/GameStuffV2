@@ -1,46 +1,128 @@
-import map from "./map.js";
 import grass from "./grass.js";
 import mountains from "./mountains.js";
-import mapTile from "./maptTile.js";
+import mapTile from "./mapTile.js";
 import {Vector2d} from "./vector2d.js"
 import {Rect} from "./rect.js"
 
 class TileSet {
     constructor(tileset) {
-        Object.assign(self, tileset);
+        Object.assign(this, tileset);
     }
     imageElement() {
-        return document.getElementById(self.image);
+        return document.getElementById(this.image);
     }
+    coordFromTileNumber(tileNumber) {
+        const x = tileNumber % this.columns;
+        const y = Math.floor(tileNumber / this.columns);
+        return new Vector2d(x, y);
+    }
+    // tileSize() {
+    //     return new Vector2d(32, 32);
+    //     // return new Vector2d(this.tilewidth, this.tileheight);
+    // }
 }
 
 const tilesets = {
     "assets\/mountains.tsx": new TileSet(mountains),
-    "assets\/grass.tsx": new TiListeningStateChangedEvent(grass)
+    "assets\/grass.tsx": new TileSet(grass)
 };
 
 class Map {
     constructor(map) {
-        Object.assign(self, map);
+        Object.assign(this, map);
         // let grassTiles = new TileSet(grass);
+        this.count = 0;
 
     }
+    linearCoord(pos) {
+        return pos.x + pos.y * this.width;
+    }
+    tileSize() {
+        return new Vector2d(this.tilewidth, this.tileheight);
+    }
+    coordFromTileNumber(tileNumber) {
+        for (const {firstgid, source} of this.tilesets.slice().reverse()) {
+            if (tileNumber >= firstgid) {
+                return tilesets[source].coordFromTileNumber(tileNumber - firstgid)
+            }
+        }
+        console.log("asdf", tileNumber);
+        throw new Error("Failed to parse map");
+    }
+    canvasToTile(canvasCoord, viewport) {
+        return viewport.add(canvasCoord).div(this.tileSize());
+    }
+
+    // rect() {
+    //     let mapSize = new Vector2d(this.width, this.height);
+    //     let tileSize = new Vector2d(this.tileWidth, this.tileHeight);
+    //     let mapSizePixels = mapSize.mul(tileSize);
+    //     let canvasSize = new Vector2d(canvas.width, canvas.height);
+    //     let mapRect = new Rect(new Vector2d(0,0), mapSize.sub(canvasSize));
+        
+    // }
 //    tilesets(name) {
 
-//        self.
+//        this.
 //    } 
-    //map should have array of tiles?
-    //figure out how to draw GRASS 
-    draw(ctx, viewport) {
-        let maptileSize = new Vector2d(self.width, self.height);
-        let tileSize = new Vector2d(self.tileWidth, self.tileHeight);
-        Vector2d.fromScalar(0).eachGridPoint(maptileSize, (tileCoord) => {
-            // image to draw from
-            /// source coordinates to pull image from
-            /// desitation coodinates to put the image at
-            document.getElementById(imageArray[tileCoord.mapLookup(map)])
-            ctx.drawImage(, ...tileCoord.mul(tileSize).sub(viewport).arr());
-        });
+
+    draw(ctx, viewport, canvasSize) {
+        
+        let mapSize = new Vector2d(this.width, this.height);
+        let tileSize = new Vector2d(this.tilewidth, this.tileheight);
+        let mapTileRect = new Rect(new Vector2d(0,0), mapSize);
+        // image to draw from
+        {
+            const tileset = tilesets["assets\/grass.tsx"];
+            const image = tileset.imageElement();
+            const topLeftTile = this.canvasToTile(Vector2d.fromScalar(0), viewport).sub(Vector2d.fromScalar(1)).floor().clamp(mapTileRect);
+            const bottomRightTile = this.canvasToTile(canvasSize, viewport)
+                .add(Vector2d.fromScalar(1))
+                .floor()
+                .clamp(mapTileRect);
+            //tileCoord.mul(tileSize).sub(viewport) < 0 no draw 
+            //tileCoord.mul(tileSize).sub(viewport) > canvasSize no draw 
+            topLeftTile.eachGridPoint(bottomRightTile, (tileCoord) => {
+                
+                
+                // size of tile
+                const tileNumber = this.layers[0].data[this.linearCoord(tileCoord)];
+                /// source coordinates to pull image from
+                const src = this.coordFromTileNumber(tileNumber);
+                /// desitation coodinates to put the image at
+                const dest = tileCoord.mul(tileSize).sub(viewport);
+                //ctx.drawImage(image, 0,0);
+
+                ctx.drawImage(image, ...src.mul(tileSize).arr(), ...tileSize.arr(), ...tileCoord.mul(tileSize).sub(viewport).arr(), ...tileSize.arr());
+            
+            });
+
+        }
+        // {
+        //     const tileset = tilesets["assets\/mountains.tsx"];
+        //     const image = tileset.imageElement();
+        //     const topLeftTile = this.canvasToTile(tileset, Vector2d.fromScalar(0), viewport).sub(Vector2d.fromScalar(1)).floor().clamp(mapTileRect);
+        //     const bottomRightTile = this.canvasToTile(tileset, canvasSize, viewport)
+        //         .add(Vector2d.fromScalar(1))
+        //         .floor()
+        //         .clamp(mapTileRect);
+        //     //tileCoord.mul(tileSize).sub(viewport) < 0 no draw 
+        //     //tileCoord.mul(tileSize).sub(viewport) > canvasSize no draw 
+        //     topLeftTile.eachGridPoint(bottomRightTile, (tileCoord) => {
+                
+                
+        //         // size of tile
+        //         const tileNumber = this.layers[1].data[this.linearCoord(tileCoord)];
+        //         /// source coordinates to pull image from
+        //         const src = this.coordFromTileNumber(tileNumber);
+        //         /// desitation coodinates to put the image at
+        //         const dest = tileCoord.mul(tileSize).sub(viewport);
+        //         //ctx.drawImage(image, 0,0);
+
+        //         ctx.drawImage(image, ...src.mul(tileSize).arr(), ...tileSize.arr(), ...tileCoord.mul(tileSize).sub(viewport).arr(), ...tileSize.arr());
+            
+        //     });
+        // }
     }
 }
 
@@ -59,13 +141,17 @@ export const run = () => {
         window.requestAnimationFrame(draw);
     }
 
-    
+    let mapCurrent = new Map(mapTile)
     let keystate = [];
     let pos = new Vector2d(128, 128);
     let timestamp = performance.now();
     let imageArray = ['wall', 'grass', 'path', 'water'];
 
     //haha I am in your codes!
+
+    //TODO only draw map in viewport
+    //add mountains
+    //get a better person/add animation as well.
     function draw(now) {
         
         let dt = (now - timestamp)/1000;
@@ -74,7 +160,7 @@ export const run = () => {
         let canvas = document.getElementById('canvas');
         let ctx = canvas.getContext('2d');
         
-        let mapSize = new Vector2d(map[0].length*32, map.length*32);
+        let mapSize = new Vector2d(mapCurrent.width*32, mapCurrent.height*32);
         let canvasSize = new Vector2d(canvas.width, canvas.height);
         let mapRect = new Rect(new Vector2d(0,0), mapSize.sub(canvasSize));
         
@@ -83,15 +169,17 @@ export const run = () => {
         //convert rect and vector2djs to classes.
         
         //make map tile class that contains tiles, speed and such (or terrain type)
-        let maptileSize = new Vector2d(map[0].length, map.length);
-        Vector2d.fromScalar(0).eachGridPoint(maptileSize, (p) => {
+        //let maptileSize = new Vector2d(map[0].length, map.length);
+        /*Vector2d.fromScalar(0).eachGridPoint(maptileSize, (p) => {
             ctx.drawImage(document.getElementById(imageArray[p.mapLookup(map)]), ...p.scale(32).sub(viewport).arr());
-        });
-    
+        });*/
+        mapCurrent.draw(ctx, viewport, canvasSize);
+
         // Draw Person
         ctx.drawImage(document.getElementById('person'), ...pos.sub(viewport).arr());
+
         //left arrow
-        let mySpeed = currentSpeed(pos, speed);
+        let mySpeed = speed; ///currentSpeed(pos, speed);
         let myVelocity = new Vector2d(0,0);
         if (keystate[37]) {
             myVelocity = myVelocity.add(new Vector2d(-1, 0))
@@ -109,16 +197,16 @@ export const run = () => {
             myVelocity = myVelocity.add(new Vector2d(0, 1))
         }
         let newPos = pos.add(myVelocity.scale(mySpeed));
-        if (isWalkable(newPos) && isWalkable(newPos.add(Vector2d.fromScalar(32))))
-        {
+        // if (isWalkable(newPos) && isWalkable(newPos.add(Vector2d.fromScalar(32))))
+        // {
             pos = newPos;
-        }
+        // }
         window.requestAnimationFrame(draw);
     }
 
     function isWalkable(pos) {
         let tile = imageArray[pos.scale(1/32).mapLookup(map)];
-        return (tile == "grass" || tile == "path" || tile == "water")                    
+        return (tile == "grass" || tile == "path" || tile == "water")
     }
     function currentSpeed(pos, speed) {
         let tile = imageArray[pos.scale(1/32).add(Vector2d.fromScalar(0.25)).mapLookup(map)];
