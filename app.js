@@ -4,6 +4,20 @@ import mapTile from "./mapTile.js";
 import {Vector2d} from "./vector2d.js"
 import {Rect} from "./rect.js"
 
+//TODO NOTES
+//change speeds based on tiles
+//inventory
+//items, and item pickups
+//use items
+//monsters, fight dynamics
+
+
+//auto generating map chunks.
+
+
+//we need to get tile number from the position that the player is standing on.  And use that to get
+//tile properties from grassV2.js
+
 class TileSet {
     constructor(tileset) {
         Object.assign(this, tileset);
@@ -40,6 +54,7 @@ class Map {
     tileSize() {
         return new Vector2d(this.tilewidth, this.tileheight);
     }
+    //we are offseting the tile numbers by firstGID
     coordFromTileNumber(tileNumber) {
         for (const {firstgid, source} of this.tilesets.slice().reverse()) {
             if (tileNumber >= firstgid) {
