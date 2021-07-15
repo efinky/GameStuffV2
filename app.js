@@ -18,6 +18,11 @@ import {Rect} from "./rect.js"
 //we need to get tile number from the position that the player is standing on.  And use that to get
 //tile properties from grassV2.js
 
+//canvas to tile to get tile coordinates
+//copy what is on line 107(ish)  linearcoords
+//  make a function to do this: const tileNumber = this.layers[0].data[this.linearCoord(tileCoord)]
+// then subtract based on layer? (or return tile for each layer?)
+// then lookup the tile properties in their layer data,
 class TileSet {
     constructor(tileset) {
         Object.assign(this, tileset);
