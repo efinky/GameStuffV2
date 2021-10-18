@@ -1,10 +1,11 @@
-import grass from "./grass.js";
+import grass from "./grassV2.js";
 import mountains from "./mountains.js";
 import mapTile from "./mapTile.js";
 import {Vector2d} from "./vector2d.js"
 import {Rect} from "./rect.js"
 
 //TODO NOTES
+// add comments or rename positions to indicate which coordinate system they are in (world, tile, viewportOrigin_w)
 //change speeds based on tiles
 //inventory
 //items, and item pickups
@@ -53,9 +54,25 @@ class Map {
         this.count = 0;
 
     }
-    linearCoord(pos) {
-        return pos.x + pos.y * this.width;
+    //fix this (t should change.... LOTS... eventually... on stone?)
+    getTile(pos_w) {
+        const pos_t = this.worldToTile(pos_w).floor();
+        const tileNumber = this.tileNumber(pos_t, 0);
+        console.log("tileNumber ", tileNumber);
+        for (const t in grass.tiles) {
+            //console.log(t + " - " tileNumber);
+            if (grass.tiles[t].tileid == tileNumber - 51) {
+                console.log("getTile",  grass.tiles[t])
+                return grass.tiles[t];
+            }
+        }
+        return null;
     }
+    tileNumber(pos_t, layer) {
+        const linearCoord = pos_t.x + pos_t.y * this.width;
+        return this.layers[layer].data[linearCoord];
+    }
+
     tileSize() {
         return new Vector2d(this.tilewidth, this.tileheight);
     }
@@ -69,8 +86,15 @@ class Map {
         console.log("asdf", tileNumber);
         throw new Error("Failed to parse map");
     }
-    canvasToTile(canvasCoord, viewport) {
-        return viewport.add(canvasCoord).div(this.tileSize());
+    //returns vector of tile coordinate.
+    viewportToTile(coord_v, viewportOrigin_w) {
+        return this.worldToTile(this.viewportToWorld(coord_v, viewportOrigin_w))
+    }
+    viewportToWorld(coord_v, viewportOrigin_w) {
+        return viewportOrigin_w.add(coord_v)
+    }
+    worldToTile(pos_w) {
+        return pos_w.div(this.tileSize());
     }
 
     // rect() {
@@ -86,7 +110,7 @@ class Map {
 //        this.
 //    } 
 
-    draw(ctx, viewport, canvasSize) {
+    draw(ctx, viewportOrigin_w, canvasSize) {
         
         let mapSize = new Vector2d(this.width, this.height);
         let tileSize = new Vector2d(this.tilewidth, this.tileheight);
@@ -95,25 +119,25 @@ class Map {
         {
             const tileset = tilesets["assets\/grass.tsx"];
             const image = tileset.imageElement();
-            const topLeftTile = this.canvasToTile(Vector2d.fromScalar(0), viewport).sub(Vector2d.fromScalar(1)).floor().clamp(mapTileRect);
-            const bottomRightTile = this.canvasToTile(canvasSize, viewport)
+            const topLeftTile = this.viewportToTile(Vector2d.fromScalar(0), viewportOrigin_w).sub(Vector2d.fromScalar(1)).floor().clamp(mapTileRect);
+            const bottomRightTile = this.viewportToTile(canvasSize, viewportOrigin_w)
                 .add(Vector2d.fromScalar(1))
                 .floor()
                 .clamp(mapTileRect);
-            //tileCoord.mul(tileSize).sub(viewport) < 0 no draw 
-            //tileCoord.mul(tileSize).sub(viewport) > canvasSize no draw 
+            //tileCoord.mul(tileSize).sub(viewportOrigin_w) < 0 no draw 
+            //tileCoord.mul(tileSize).sub(viewportOrigin_w) > canvasSize no draw 
             topLeftTile.eachGridPoint(bottomRightTile, (tileCoord) => {
                 
                 
                 // size of tile
-                const tileNumber = this.layers[0].data[this.linearCoord(tileCoord)];
+                const tileNumber = this.tileNumber(tileCoord, 0);
                 /// source coordinates to pull image from
                 const src = this.coordFromTileNumber(tileNumber);
                 /// desitation coodinates to put the image at
-                const dest = tileCoord.mul(tileSize).sub(viewport);
+                const dest = tileCoord.mul(tileSize).sub(viewportOrigin_w);
                 //ctx.drawImage(image, 0,0);
 
-                ctx.drawImage(image, ...src.mul(tileSize).arr(), ...tileSize.arr(), ...tileCoord.mul(tileSize).sub(viewport).arr(), ...tileSize.arr());
+                ctx.drawImage(image, ...src.mul(tileSize).arr(), ...tileSize.arr(), ...tileCoord.mul(tileSize).sub(viewportOrigin_w).arr(), ...tileSize.arr());
             
             });
 
@@ -121,13 +145,13 @@ class Map {
         // {
         //     const tileset = tilesets["assets\/mountains.tsx"];
         //     const image = tileset.imageElement();
-        //     const topLeftTile = this.canvasToTile(tileset, Vector2d.fromScalar(0), viewport).sub(Vector2d.fromScalar(1)).floor().clamp(mapTileRect);
-        //     const bottomRightTile = this.canvasToTile(tileset, canvasSize, viewport)
+        //     const topLeftTile = this.viewportToTile(tileset, Vector2d.fromScalar(0), viewportOrigin_w).sub(Vector2d.fromScalar(1)).floor().clamp(mapTileRect);
+        //     const bottomRightTile = this.viewportToTile(tileset, canvasSize, viewportOrigin_w)
         //         .add(Vector2d.fromScalar(1))
         //         .floor()
         //         .clamp(mapTileRect);
-        //     //tileCoord.mul(tileSize).sub(viewport) < 0 no draw 
-        //     //tileCoord.mul(tileSize).sub(viewport) > canvasSize no draw 
+        //     //tileCoord.mul(tileSize).sub(viewportOrigin_w) < 0 no draw 
+        //     //tileCoord.mul(tileSize).sub(viewportOrigin_w) > canvasSize no draw 
         //     topLeftTile.eachGridPoint(bottomRightTile, (tileCoord) => {
                 
                 
@@ -136,10 +160,10 @@ class Map {
         //         /// source coordinates to pull image from
         //         const src = this.coordFromTileNumber(tileNumber);
         //         /// desitation coodinates to put the image at
-        //         const dest = tileCoord.mul(tileSize).sub(viewport);
+        //         const dest = tileCoord.mul(tileSize).sub(viewportOrigin_w);
         //         //ctx.drawImage(image, 0,0);
 
-        //         ctx.drawImage(image, ...src.mul(tileSize).arr(), ...tileSize.arr(), ...tileCoord.mul(tileSize).sub(viewport).arr(), ...tileSize.arr());
+        //         ctx.drawImage(image, ...src.mul(tileSize).arr(), ...tileSize.arr(), ...tileCoord.mul(tileSize).sub(viewportOrigin_w).arr(), ...tileSize.arr());
             
         //     });
         // }
@@ -163,13 +187,13 @@ export const run = () => {
 
     let mapCurrent = new Map(mapTile)
     let keystate = [];
-    let pos = new Vector2d(128, 128);
+    let playerPos_w = new Vector2d(128, 128); //in world coordinates
     let timestamp = performance.now();
     let imageArray = ['wall', 'grass', 'path', 'water'];
 
     //haha I am in your codes!
 
-    //TODO only draw map in viewport
+    //TODO only draw map in viewportOrigin_w
     //add mountains
     //get a better person/add animation as well.
     function draw(now) {
@@ -184,22 +208,23 @@ export const run = () => {
         let canvasSize = new Vector2d(canvas.width, canvas.height);
         let mapRect = new Rect(new Vector2d(0,0), mapSize.sub(canvasSize));
         
-        let viewport = pos.sub(canvasSize.scale(0.5)).clamp(mapRect);
+        // Top left corner of the viewable area, in world coordinates
+        let viewportOrigin_w = playerPos_w.sub(canvasSize.scale(0.5)).clamp(mapRect);
 
         //convert rect and vector2djs to classes.
         
         //make map tile class that contains tiles, speed and such (or terrain type)
         //let maptileSize = new Vector2d(map[0].length, map.length);
         /*Vector2d.fromScalar(0).eachGridPoint(maptileSize, (p) => {
-            ctx.drawImage(document.getElementById(imageArray[p.mapLookup(map)]), ...p.scale(32).sub(viewport).arr());
+            ctx.drawImage(document.getElementById(imageArray[p.mapLookup(map)]), ...p.scale(32).sub(viewportOrigin_w).arr());
         });*/
-        mapCurrent.draw(ctx, viewport, canvasSize);
-
+        mapCurrent.draw(ctx, viewportOrigin_w, canvasSize);
+        mapCurrent.getTile(playerPos_w);
         // Draw Person
-        ctx.drawImage(document.getElementById('person'), ...pos.sub(viewport).arr());
+        ctx.drawImage(document.getElementById('person'), ...playerPos_w.sub(viewportOrigin_w).arr());
 
         //left arrow
-        let mySpeed = speed; ///currentSpeed(pos, speed);
+        let mySpeed = speed; ///currentSpeed(playerPos_w, speed);
         let myVelocity = new Vector2d(0,0);
         if (keystate[37]) {
             myVelocity = myVelocity.add(new Vector2d(-1, 0))
@@ -216,10 +241,10 @@ export const run = () => {
         if (keystate[40]) {
             myVelocity = myVelocity.add(new Vector2d(0, 1))
         }
-        let newPos = pos.add(myVelocity.scale(mySpeed));
-        // if (isWalkable(newPos) && isWalkable(newPos.add(Vector2d.fromScalar(32))))
+        let newplayerPos_w = playerPos_w.add(myVelocity.scale(mySpeed));
+        // if (isWalkable(newplayerPos_w) && isWalkable(newplayerPos_w.add(Vector2d.fromScalar(32))))
         // {
-            pos = newPos;
+            playerPos_w = newplayerPos_w;
         // }
         window.requestAnimationFrame(draw);
     }
