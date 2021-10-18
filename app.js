@@ -4,13 +4,26 @@ import mapTile from "./mapTile.js";
 import {Vector2d} from "./vector2d.js"
 import {Rect} from "./rect.js"
 
+
+//Last completed - fixed speed so that it is dynamic and balanced(ish)
+
+//speed mountians broke... mountains... broke
+
+
 //TODO NOTES
+
+//put new speed in function
+//make not walkable tiles work
+//don't die when leaving map.
+
 // add comments or rename positions to indicate which coordinate system they are in (world, tile, viewportOrigin_w)
 //change speeds based on tiles
 //inventory
 //items, and item pickups
 //use items
 //monsters, fight dynamics
+
+//average speed equations.  (2*centerTile + corner1Tile + corner2Tile + corner3Tile + corner4Tile)/6
 
 
 //auto generating map chunks.
@@ -54,15 +67,16 @@ class Map {
         this.count = 0;
 
     }
+    
     //fix this (t should change.... LOTS... eventually... on stone?)
     getTile(pos_w) {
         const pos_t = this.worldToTile(pos_w).floor();
         const tileNumber = this.tileNumber(pos_t, 0);
-        console.log("tileNumber ", tileNumber);
+        // console.log("tileNumber ", tileNumber);
         for (const t in grass.tiles) {
             //console.log(t + " - " tileNumber);
             if (grass.tiles[t].tileid == tileNumber - 51) {
-                console.log("getTile",  grass.tiles[t])
+                // console.log("getTile",  grass.tiles[t])
                 return grass.tiles[t];
             }
         }
@@ -200,9 +214,10 @@ export const run = () => {
         
         let dt = (now - timestamp)/1000;
         timestamp = now;
-        let speed = 3*32*dt;
+        let defaultSpeed = 3*32*dt;
         let canvas = document.getElementById('canvas');
         let ctx = canvas.getContext('2d');
+        let tileSize = new Vector2d(32, 32);
         
         let mapSize = new Vector2d(mapCurrent.width*32, mapCurrent.height*32);
         let canvasSize = new Vector2d(canvas.width, canvas.height);
@@ -218,8 +233,25 @@ export const run = () => {
         /*Vector2d.fromScalar(0).eachGridPoint(maptileSize, (p) => {
             ctx.drawImage(document.getElementById(imageArray[p.mapLookup(map)]), ...p.scale(32).sub(viewportOrigin_w).arr());
         });*/
+        
         mapCurrent.draw(ctx, viewportOrigin_w, canvasSize);
-        mapCurrent.getTile(playerPos_w);
+        // TODO put this into a separate function:
+        let pCenter = playerPos_w.add(tileSize.scale(0.5));
+        let pTopLeft = playerPos_w;
+        let pTopRight = playerPos_w.add(new Vector2d(tileSize.x, 0));
+        let pBottomLeft = playerPos_w.add(new Vector2d(0, tileSize.y));
+        let pBottomRight = playerPos_w.add(tileSize);
+        let speedPositions = [pCenter, pCenter, pTopLeft, pTopRight, pBottomLeft, pBottomRight];
+        let speed = 0;
+        for (let i in speedPositions) {
+            let t = mapCurrent.getTile(speedPositions[i]);
+            if (t) {
+                speed += t.speed;
+            }
+        }
+        speed = speed / speedPositions.length;
+        console.log("Speed", speed);
+
         // Draw Person
         ctx.drawImage(document.getElementById('person'), ...playerPos_w.sub(viewportOrigin_w).arr());
 

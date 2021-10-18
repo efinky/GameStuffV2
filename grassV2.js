@@ -17,7 +17,7 @@ export default
     {
         "tileid":10,
         "isWalkable":true,
-        "speed":1,
+        "speed":.5,
         "wangid":[0, 2, 0, 2, 0, 2, 0, 2]
     }, 
     {
@@ -35,7 +35,13 @@ export default
     {
         "tileid":13,
         "isWalkable":true,
-        "speed":1,
+        "speed":2,
+        "wangid":[0, 1, 0, 1, 0, 2, 0, 1]
+    },
+    {
+        "tileid":14,
+        "isWalkable":true,
+        "speed":2,
         "wangid":[0, 1, 0, 1, 0, 2, 0, 1]
     }, 
     {
