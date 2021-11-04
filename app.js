@@ -7,10 +7,17 @@ import {Rect} from "./rect.js"
 
 //Last completed - fixed speed so that it is dynamic and balanced(ish)
 
-//speed mountians broke... mountains... broke
-
+//last completed 11/04/21 - made an inventory!  press 'i' to toggle and added some
+// "items"
 
 //TODO NOTES
+//Next up 
+//Add Div's left to right (grid auto columns and pick a size?)
+//add ability to scroll
+//add shadows
+//make item box grey instead of black
+//add border radius and text for items
+//
 
 
 //inventory
