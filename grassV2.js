@@ -15,6 +15,12 @@ export default
 
 "tiles":[
     {
+        "tileid":9,
+        "isWalkable":false,
+        "speed":0,
+        "wangid":[0, 2, 0, 2, 0, 2, 0, 2]
+    }, 
+    {
         "tileid":10,
         "isWalkable":true,
         "speed":.5,

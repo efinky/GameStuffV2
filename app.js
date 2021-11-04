@@ -12,13 +12,12 @@ import {Rect} from "./rect.js"
 
 //TODO NOTES
 
-//put new speed in function
-//make not walkable tiles work
-//don't die when leaving map.
 
-// add comments or rename positions to indicate which coordinate system they are in (world, tile, viewportOrigin_w)
-//change speeds based on tiles
 //inventory
+// weapons 
+// gold
+// health (on the play in the map)
+//minimap
 //items, and item pickups
 //use items
 //monsters, fight dynamics
@@ -83,6 +82,10 @@ class Map {
         return null;
     }
     tileNumber(pos_t, layer) {
+        let bounds = new Rect(new Vector2d(0,0), new Vector2d(this.width, this.height));
+        if (!pos_t.insideOf(bounds)) {
+            return undefined;
+        }
         const linearCoord = pos_t.x + pos_t.y * this.width;
         return this.layers[layer].data[linearCoord];
     }
@@ -189,6 +192,15 @@ export const run = () => {
         updateCanvasSize(document, document.getElementById('canvas'));
         document.addEventListener("keydown", (event) => {
             keystate[event.keyCode] = true;
+            if (event.key == "i") {
+                const inventoryUI = document.getElementById('inventoryBox');
+                if (inventoryUI.style.visibility != "hidden") {
+                    inventoryUI.style.visibility = "hidden"
+                } else {
+                    inventoryUI.style.visibility = "visible"
+                }
+                
+            }
         });
         document.addEventListener("keyup", (event) => {
             keystate[event.keyCode] = false;
@@ -241,7 +253,7 @@ export const run = () => {
         let pTopRight = playerPos_w.add(new Vector2d(tileSize.x, 0));
         let pBottomLeft = playerPos_w.add(new Vector2d(0, tileSize.y));
         let pBottomRight = playerPos_w.add(tileSize);
-        let speedPositions = [pCenter, pCenter, pTopLeft, pTopRight, pBottomLeft, pBottomRight];
+        let speedPositions = [pCenter, pTopLeft, pTopRight, pBottomLeft, pBottomRight];
         let speed = 0;
         for (let i in speedPositions) {
             let t = mapCurrent.getTile(speedPositions[i]);
@@ -273,11 +285,26 @@ export const run = () => {
         if (keystate[40]) {
             myVelocity = myVelocity.add(new Vector2d(0, 1))
         }
+        let isWalkable = true;
         let newplayerPos_w = playerPos_w.add(myVelocity.scale(mySpeed));
+        {
+            let pTopLeft = newplayerPos_w;
+            let pTopRight = newplayerPos_w.add(new Vector2d(tileSize.x, 0));
+            let pBottomLeft = newplayerPos_w.add(new Vector2d(0, tileSize.y));
+            let pBottomRight = newplayerPos_w.add(tileSize);
+            let speedPositions = [pTopLeft, pTopRight, pBottomLeft, pBottomRight];
+            for (let i in speedPositions) {
+                let t = mapCurrent.getTile(speedPositions[i]);
+                if (!t || t.isWalkable == false) {
+                    isWalkable = false;
+                }
+            }
+        }
         // if (isWalkable(newplayerPos_w) && isWalkable(newplayerPos_w.add(Vector2d.fromScalar(32))))
         // {
+        if (isWalkable) {
             playerPos_w = newplayerPos_w;
-        // }
+        }
         window.requestAnimationFrame(draw);
     }
 

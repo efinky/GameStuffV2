@@ -29,6 +29,19 @@ export class Vector2d {
     }
     return vect;
   }
+  insideOf(rect) {
+    if (this.x < rect.tl.x) {
+      return false;
+    } else if (this.x >= rect.br.x) {
+      return false;
+    }
+    if (this.y < rect.tl.y) {
+      return false
+    } else if (this.y >= rect.br.y) {
+      return false;
+    }
+    return true;
+  }
   mapLookup(map) {
     return map[Math.floor(this.y)][Math.floor(this.x)];
   }
