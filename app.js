@@ -10,14 +10,21 @@ import {Rect} from "./rect.js"
 //last completed 11/04/21 - made an inventory!  press 'i' to toggle and added some
 // "items"
 
-//TODO NOTES
-//Next up 
+//last completed 11/08/21
 //Add Div's left to right (grid auto columns and pick a size?)
 //add ability to scroll
-//add shadows
+
+//TODO NOTES
+//Next up 
+
+//add shadows to items
 //make item box grey instead of black
 //add border radius and text for items
-//
+//tooltip for text (hover over text)
+//make person box look better.
+//add ability to pickup items and add them to inventory
+
+//find better icons.
 
 
 //inventory
@@ -200,7 +207,7 @@ export const run = () => {
         document.addEventListener("keydown", (event) => {
             keystate[event.keyCode] = true;
             if (event.key == "i") {
-                const inventoryUI = document.getElementById('inventoryBox');
+                const inventoryUI = document.getElementById('box');
                 if (inventoryUI.style.visibility != "hidden") {
                     inventoryUI.style.visibility = "hidden"
                 } else {
