@@ -26,6 +26,8 @@ import {Rect} from "./rect.js"
 
 //find better icons.
 
+//
+
 
 //inventory
 // weapons 
@@ -213,6 +215,7 @@ export const run = () => {
                 } else {
                     inventoryUI.style.visibility = "visible"
                 }
+                event.preventDefault();
                 
             }
         });
