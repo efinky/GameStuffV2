@@ -1,3 +1,4 @@
+export default
 { "compressionlevel":-1,
  "height":100,
  "infinite":false,

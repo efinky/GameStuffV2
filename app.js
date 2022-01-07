@@ -1,57 +1,15 @@
-import grass from "./grassV2.js";
-import mountains from "./mountains.js";
-import mapTile from "./mapTile.js";
+import grass from "./FancyTileSet.js";
+import mapTile from "./AwesomeMap.js";
 import {Vector2d} from "./vector2d.js"
 import {Rect} from "./rect.js"
 
-
-//Last completed - fixed speed so that it is dynamic and balanced(ish)
-
-//last completed 11/04/21 - made an inventory!  press 'i' to toggle and added some
-// "items"
-
-//last completed 11/08/21
-//Add Div's left to right (grid auto columns and pick a size?)
-//add ability to scroll
-
-//TODO NOTES
-//Next up 
-
-//add shadows to items
-//make item box grey instead of black
-//add border radius and text for items
-//tooltip for text (hover over text)
-//make person box look better.
-//add ability to pickup items and add them to inventory
-
-//find better icons.
-
-//
-
-
-//inventory
-// weapons 
-// gold
-// health (on the play in the map)
-//minimap
-//items, and item pickups
-//use items
-//monsters, fight dynamics
-
-//average speed equations.  (2*centerTile + corner1Tile + corner2Tile + corner3Tile + corner4Tile)/6
-
-
-//auto generating map chunks.
-
-
-//we need to get tile number from the position that the player is standing on.  And use that to get
-//tile properties from grassV2.js
-
-//canvas to tile to get tile coordinates
-//copy what is on line 107(ish)  linearcoords
-//  make a function to do this: const tileNumber = this.layers[0].data[this.linearCoord(tileCoord)]
-// then subtract based on layer? (or return tile for each layer?)
-// then lookup the tile properties in their layer data,
+//1/7/22
+//todo:
+//add images to map - allow for image collection
+//remove fireballs
+//create ability to use tile attributes.
+//do awesome!
+//fix tileset... its offset by a few pixels.
 class TileSet {
     constructor(tileset) {
         Object.assign(this, tileset);
@@ -71,8 +29,7 @@ class TileSet {
 }
 
 const tilesets = {
-    "assets\/mountains.tsx": new TileSet(mountains),
-    "assets\/grass.tsx": new TileSet(grass)
+    "..\/Crossfire\/TileSets\/TileSetSheet.tsx": new TileSet(grass)
 };
 
 class Map {
@@ -87,6 +44,7 @@ class Map {
     getTile(pos_w) {
         const pos_t = this.worldToTile(pos_w).floor();
         const tileNumber = this.tileNumber(pos_t, 0);
+        return grass.tiles[tileNumber];
         // console.log("tileNumber ", tileNumber);
         for (const t in grass.tiles) {
             //console.log(t + " - " tileNumber);
@@ -150,7 +108,7 @@ class Map {
         let mapTileRect = new Rect(new Vector2d(0,0), mapSize);
         // image to draw from
         {
-            const tileset = tilesets["assets\/grass.tsx"];
+            const tileset = tilesets["..\/Crossfire\/TileSets\/TileSetSheet.tsx"];
             const image = tileset.imageElement();
             const topLeftTile = this.viewportToTile(Vector2d.fromScalar(0), viewportOrigin_w).sub(Vector2d.fromScalar(1)).floor().clamp(mapTileRect);
             const bottomRightTile = this.viewportToTile(canvasSize, viewportOrigin_w)
@@ -278,7 +236,8 @@ export const run = () => {
                 speed += t.speed;
             }
         }
-        speed = speed / speedPositions.length;
+        ///////////FIX//////////////
+        speed =3;//= speed / speedPositions.length;
         console.log("Speed", speed);
 
         // Draw Person
@@ -316,6 +275,8 @@ export const run = () => {
                     isWalkable = false;
                 }
             }
+            //!!!!!!!!REMOVE!!!!!!!!!!!!!
+            isWalkable = true;
         }
         // if (isWalkable(newplayerPos_w) && isWalkable(newplayerPos_w.add(Vector2d.fromScalar(32))))
         // {

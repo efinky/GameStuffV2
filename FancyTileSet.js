@@ -1,3 +1,4 @@
+export default
 { "columns":16,
  "editorsettings":
     {
@@ -7,7 +8,7 @@
          "target":"TileTest2.json"
         }
     },
- "image":"..\/Tiles\/Base\/TileSetSheet.png",
+ "image":"grass",
  "imageheight":832,
  "imagewidth":512,
  "margin":0,
