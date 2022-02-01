@@ -3,6 +3,7 @@ import items from "./items.js";
 import mapTile from "./AwesomeMap.js";
 import {Vector2d} from "./vector2d.js"
 import {Rect} from "./rect.js"
+// import someData from "./test.json" assert { type: "json" };
 
 //1/7/22
 //todo:
@@ -12,17 +13,43 @@ import {Rect} from "./rect.js"
 //do awesome!
 //fix tileset... its offset by a few pixels.
 //01/24/22
-//Todo:
+// Todo:
 //sprite sheet generator?
 //figure out how to load items
 //animations?
 //pick up items!!!! (draw items to map first)
+
+async function loadJSON(url) {
+    let resp = await fetch(url);
+    let json = await resp.json();
+    return json;
+}
+
+async function loadImage(url) {
+    let resp = await fetch(url);
+    let blob = await resp.blob();
+    const imageUrl = URL.createObjectURL(blob)
+    let image = new Image();
+    image.src = imageUrl;
+    return image;
+}
+
 class TileSet {
     constructor(tileset) {
+        
         Object.assign(this, tileset);
+        if (this.image == "grass") {
+            loadImage("Pictures/TileSetSheet.png").then((image)=> this.foo = image)
+            // fetch("Pictures/TileSetSheet.png").then((resp) =>  {
+            //     resp.blob()
+            // }, (e) => {raise(e)}) 
+            // this.foo = 
+        }
+        console.log("IMAGE", this.image);
     }
     imageElement() {
-        return document.getElementById(this.image);
+        return this.foo;
+        // return document.getElementById(this.image);
     }
     coordFromTileNumber(tileNumber) {
         const x = tileNumber % this.columns;
@@ -184,6 +211,12 @@ function loadItems(doc) {
     }
 }
 
+
+async function loadTileSets() {
+    let data = await (await fetch("./test.json")).json();
+    console.log("Response!", data);
+}
+
 export const run = () => {
 
     let mapCurrent = new Map(mapTile)
@@ -196,6 +229,7 @@ export const run = () => {
     let playerInventory = ["apple", "apple", "sword", "amethyst"];
 
     document.body.onload = () => {
+        loadTileSets();
         updateCanvasSize(document, document.getElementById('canvas'));
         document.addEventListener("keydown", (event) => {
             keystate[event.keyCode] = true;
