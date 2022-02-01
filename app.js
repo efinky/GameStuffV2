@@ -1,4 +1,5 @@
 import grass from "./FancyTileSet.js";
+import items from "./items.js";
 import mapTile from "./AwesomeMap.js";
 import {Vector2d} from "./vector2d.js"
 import {Rect} from "./rect.js"
@@ -10,6 +11,12 @@ import {Rect} from "./rect.js"
 //create ability to use tile attributes.
 //do awesome!
 //fix tileset... its offset by a few pixels.
+//01/24/22
+//Todo:
+//sprite sheet generator?
+//figure out how to load items
+//animations?
+//pick up items!!!! (draw items to map first)
 class TileSet {
     constructor(tileset) {
         Object.assign(this, tileset);
@@ -29,7 +36,8 @@ class TileSet {
 }
 
 const tilesets = {
-    "..\/Crossfire\/TileSets\/TileSetSheet.tsx": new TileSet(grass)
+    "TileSetSheet.tsx": new TileSet(grass),
+    "Items.tsx": new TileSet(items)
 };
 
 class Map {
@@ -108,7 +116,7 @@ class Map {
         let mapTileRect = new Rect(new Vector2d(0,0), mapSize);
         // image to draw from
         {
-            const tileset = tilesets["..\/Crossfire\/TileSets\/TileSetSheet.tsx"];
+            const tileset = tilesets["TileSetSheet.tsx"];
             const image = tileset.imageElement();
             const topLeftTile = this.viewportToTile(Vector2d.fromScalar(0), viewportOrigin_w).sub(Vector2d.fromScalar(1)).floor().clamp(mapTileRect);
             const bottomRightTile = this.viewportToTile(canvasSize, viewportOrigin_w)
@@ -161,16 +169,48 @@ class Map {
     }
 }
 
+class Item {
+    constructor(name, image) {
+        this.name = name;
+        this.image = image;
+    }
+}
+
+function loadItems(doc) {
+    return {
+        "apple": new Item("Apple", doc.getElementById('apple')),
+        "sword": new Item("Sword", doc.getElementById('sword')),
+        "amethyst": new Item("Amethyst", doc.getElementById('amethyst'))
+    }
+}
+
 export const run = () => {
+
+    let mapCurrent = new Map(mapTile)
+    let keystate = [];
+    let playerPos_w = new Vector2d(128, 128); //in world coordinates
+    let timestamp = performance.now();
+    let imageArray = ['wall', 'grass', 'path', 'water'];
+
+    let loadedItems = loadItems(document);
+    let playerInventory = ["apple", "apple", "sword", "amethyst"];
+
     document.body.onload = () => {
         updateCanvasSize(document, document.getElementById('canvas'));
         document.addEventListener("keydown", (event) => {
             keystate[event.keyCode] = true;
             if (event.key == "i") {
                 const inventoryUI = document.getElementById('box');
+                const inventoryBox = document.getElementById('inventoryBox');
                 if (inventoryUI.style.visibility != "hidden") {
                     inventoryUI.style.visibility = "hidden"
                 } else {
+                    while (inventoryBox.firstChild) {
+                        inventoryBox.removeChild(inventoryBox.lastChild);
+                      }
+                    playerInventory.forEach(i => {
+                        inventoryBox.appendChild(loadedItems[i].image.cloneNode(false));
+                    });
                     inventoryUI.style.visibility = "visible"
                 }
                 event.preventDefault();
@@ -186,11 +226,6 @@ export const run = () => {
         window.requestAnimationFrame(draw);
     }
 
-    let mapCurrent = new Map(mapTile)
-    let keystate = [];
-    let playerPos_w = new Vector2d(128, 128); //in world coordinates
-    let timestamp = performance.now();
-    let imageArray = ['wall', 'grass', 'path', 'water'];
 
     //haha I am in your codes!
 
