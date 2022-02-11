@@ -47,7 +47,9 @@
         </style>
         <script type="module">
             import {run} from "./app.js";
-            run();
+            document.body.onload = () => {
+                run();
+            }
         </script>
     </head>
     <body style="margin: 0px; width:100%; height:100%">

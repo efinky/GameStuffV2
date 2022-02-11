@@ -1,9 +1,15 @@
 import grass from "./FancyTileSet.js";
 import items from "./items.js";
-import mapTile from "./AwesomeMap.js";
 import {Vector2d} from "./vector2d.js"
 import {Rect} from "./rect.js"
 // import someData from "./test.json" assert { type: "json" };
+
+//2/02/22
+//dynamically load map as a .json
+//dynamically load image from tileset
+//dynamically load tileset
+//note - in items.json their offset is 417
+
 
 //1/7/22
 //todo:
@@ -34,22 +40,22 @@ async function loadImage(url) {
     return image;
 }
 
+
+async function loadTileset(path) {
+    let data = await (await fetch(path)).json();
+    let image = await loadImage(data.image);
+    console.log("IMAGE", data.image);
+    return new TileSet(data, image);
+}
+
 class TileSet {
-    constructor(tileset) {
+    constructor(tileset, image) {
         
         Object.assign(this, tileset);
-        if (this.image == "grass") {
-            loadImage("Pictures/TileSetSheet.png").then((image)=> this.foo = image)
-            // fetch("Pictures/TileSetSheet.png").then((resp) =>  {
-            //     resp.blob()
-            // }, (e) => {raise(e)}) 
-            // this.foo = 
-        }
-        console.log("IMAGE", this.image);
+        this.image = image;
     }
     imageElement() {
-        return this.foo;
-        // return document.getElementById(this.image);
+        return this.image;
     }
     coordFromTileNumber(tileNumber) {
         const x = tileNumber % this.columns;
@@ -162,7 +168,7 @@ class Map {
                 /// desitation coodinates to put the image at
                 const dest = tileCoord.mul(tileSize).sub(viewportOrigin_w);
                 //ctx.drawImage(image, 0,0);
-
+            
                 ctx.drawImage(image, ...src.mul(tileSize).arr(), ...tileSize.arr(), ...tileCoord.mul(tileSize).sub(viewportOrigin_w).arr(), ...tileSize.arr());
             
             });
@@ -211,15 +217,9 @@ function loadItems(doc) {
     }
 }
 
-
-async function loadTileSets() {
-    let data = await (await fetch("./test.json")).json();
-    console.log("Response!", data);
-}
-
-export const run = () => {
-
-    let mapCurrent = new Map(mapTile)
+export const run = async () => {
+    let mapTile = await loadJSON("./AwesomeMap.json");
+    let mapCurrent = new Map(mapTile);
     let keystate = [];
     let playerPos_w = new Vector2d(128, 128); //in world coordinates
     let timestamp = performance.now();
@@ -228,8 +228,7 @@ export const run = () => {
     let loadedItems = loadItems(document);
     let playerInventory = ["apple", "apple", "sword", "amethyst"];
 
-    document.body.onload = () => {
-        loadTileSets();
+    // document.body.onload = () => {
         updateCanvasSize(document, document.getElementById('canvas'));
         document.addEventListener("keydown", (event) => {
             keystate[event.keyCode] = true;
@@ -258,7 +257,7 @@ export const run = () => {
             updateCanvasSize(document, document.getElementById('canvas'));
         }, false);
         window.requestAnimationFrame(draw);
-    }
+    // }
 
 
     //haha I am in your codes!
@@ -307,7 +306,7 @@ export const run = () => {
         }
         ///////////FIX//////////////
         speed =3;//= speed / speedPositions.length;
-        console.log("Speed", speed);
+        //console.log("Speed", speed);
 
         // Draw Person
         ctx.drawImage(document.getElementById('person'), ...playerPos_w.sub(viewportOrigin_w).arr());

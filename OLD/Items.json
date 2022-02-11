@@ -8,13 +8,117 @@
  "margin":0,
  "name":"Items",
  "spacing":0,
- "tilecount":10,
+ "tilecount":9,
  "tiledversion":"1.5.0",
  "tileheight":32,
  "tiles":[
         {
          "id":0,
-         "image":"Pictures\/food\/apple.base.111.png",
+         "image":"\/Pictures\/Jewels\/blue_crystal.base.111.png",
+         "imageheight":32,
+         "imagewidth":32,
+         "properties":[
+                {
+                 "name":"Value",
+                 "type":"int",
+                 "value":4
+                }, 
+                {
+                 "name":"Weight",
+                 "type":"int",
+                 "value":3
+                }],
+         "type":"Items"
+        }, 
+        {
+         "id":1,
+         "image":"\/Pictures\/Jewels\/diamond_exceptional.base.111.png",
+         "imageheight":32,
+         "imagewidth":32,
+         "properties":[
+                {
+                 "name":"Value",
+                 "type":"int",
+                 "value":15
+                }, 
+                {
+                 "name":"Weight",
+                 "type":"int",
+                 "value":4
+                }],
+         "type":"Items"
+        }, 
+        {
+         "id":2,
+         "image":"\/Pictures\/Jewels\/emerald.base.111.png",
+         "imageheight":32,
+         "imagewidth":32,
+         "properties":[
+                {
+                 "name":"Value",
+                 "type":"int",
+                 "value":8
+                }, 
+                {
+                 "name":"Weight",
+                 "type":"int",
+                 "value":5
+                }],
+         "type":"Items"
+        }, 
+        {
+         "id":3,
+         "image":"\/Pictures\/Jewels\/gem.clsc.111.png",
+         "imageheight":32,
+         "imagewidth":32,
+         "properties":[
+                {
+                 "name":"Value",
+                 "type":"int",
+                 "value":6
+                }, 
+                {
+                 "name":"Weight",
+                 "type":"int",
+                 "value":7
+                }],
+         "type":"Items"
+        }, 
+        {
+         "id":4,
+         "image":"\/Pictures\/Jewels\/goldcoin.base.111.png",
+         "imageheight":32,
+         "imagewidth":32,
+         "type":"Items"
+        }, 
+        {
+         "id":5,
+         "image":"\/Pictures\/Jewels\/amethyst.base.111.png",
+         "imageheight":32,
+         "imagewidth":32,
+         "properties":[
+                {
+                 "name":"Value",
+                 "type":"int",
+                 "value":10
+                }, 
+                {
+                 "name":"Weight",
+                 "type":"int",
+                 "value":3
+                }],
+         "type":"Items"
+        }, 
+        {
+         "id":6,
+         "image":"\/Pictures\/Jewels\/amethyst_exceptional.base.111.png",
+         "imageheight":32,
+         "imagewidth":32,
+         "type":"Items"
+        }, 
+        {
+         "id":7,
+         "image":"\/Pictures\/Jewels\/b_bsword_1.base.111.png",
          "imageheight":32,
          "imagewidth":32,
          "properties":[
@@ -26,133 +130,12 @@
                 {
                  "name":"Value",
                  "type":"int",
-                 "value":5
+                 "value":15
                 }, 
                 {
-                 "name":"Weight",
-                 "type":"int",
-                 "value":10
-                }],
-         "type":"Items"
-        }, 
-        {
-         "id":1,
-         "image":"Pictures\/valuables\/amethyst_exceptional.base.111.png",
-         "imageheight":32,
-         "imagewidth":32,
-         "properties":[
-                {
-                 "name":"Value",
-                 "type":"int",
-                 "value":5
-                }, 
-                {
-                 "name":"Weight",
-                 "type":"int",
-                 "value":10
-                }],
-         "type":"Items"
-        }, 
-        {
-         "id":2,
-         "image":"Pictures\/valuables\/blue_crystal.base.111.png",
-         "imageheight":32,
-         "imagewidth":32,
-         "properties":[
-                {
-                 "name":"Value",
-                 "type":"int",
-                 "value":25
-                }, 
-                {
-                 "name":"Weight",
-                 "type":"int",
-                 "value":10
-                }],
-         "type":"Items"
-        }, 
-        {
-         "id":3,
-         "image":"Pictures\/valuables\/diamond_exceptional.base.111.png",
-         "imageheight":32,
-         "imagewidth":32,
-         "properties":[
-                {
-                 "name":"Value",
-                 "type":"int",
-                 "value":20
-                }, 
-                {
-                 "name":"Weight",
-                 "type":"int",
-                 "value":10
-                }],
-         "type":"Items"
-        }, 
-        {
-         "id":4,
-         "image":"Pictures\/valuables\/emerald.base.111.png",
-         "imageheight":32,
-         "imagewidth":32,
-         "properties":[
-                {
-                 "name":"Value",
-                 "type":"int",
-                 "value":5
-                }, 
-                {
-                 "name":"Weight",
-                 "type":"int",
-                 "value":10
-                }],
-         "type":"Items"
-        }, 
-        {
-         "id":5,
-         "image":"Pictures\/valuables\/gem.clsc.111.png",
-         "imageheight":32,
-         "imagewidth":32,
-         "properties":[
-                {
-                 "name":"Value",
-                 "type":"int",
-                 "value":5
-                }, 
-                {
-                 "name":"Weight",
-                 "type":"int",
-                 "value":10
-                }],
-         "type":"Items"
-        }, 
-        {
-         "id":6,
-         "image":"Pictures\/valuables\/goldcoin.base.111.png",
-         "imageheight":32,
-         "imagewidth":32,
-         "properties":[
-                {
-                 "name":"Value",
-                 "type":"int",
-                 "value":2
-                }, 
-                {
-                 "name":"Weight",
-                 "type":"int",
-                 "value":10
-                }],
-         "type":"Items"
-        }, 
-        {
-         "id":7,
-         "image":"Pictures\/valuables\/amethyst.base.111.png",
-         "imageheight":32,
-         "imagewidth":32,
-         "properties":[
-                {
-                 "name":"Value",
-                 "type":"int",
-                 "value":5
+                 "name":"Weapon",
+                 "type":"bool",
+                 "value":true
                 }, 
                 {
                  "name":"Weight",
@@ -163,7 +146,7 @@
         }, 
         {
          "id":8,
-         "image":"Pictures\/weapons\/dagger.base.111.png",
+         "image":"\/Pictures\/Jewels\/dagger.base.111.png",
          "imageheight":32,
          "imagewidth":32,
          "properties":[
@@ -174,36 +157,8 @@
                 }, 
                 {
                  "name":"Value",
-                 "type":"int",
-                 "value":5
-                }, 
-                {
-                 "name":"Weapon",
-                 "type":"bool",
-                 "value":true
-                }, 
-                {
-                 "name":"Weight",
                  "type":"int",
                  "value":10
-                }],
-         "type":"Items"
-        }, 
-        {
-         "id":9,
-         "image":"Pictures\/weapons\/b_bsword_1.base.111.png",
-         "imageheight":32,
-         "imagewidth":32,
-         "properties":[
-                {
-                 "name":"Currency",
-                 "type":"bool",
-                 "value":false
-                }, 
-                {
-                 "name":"Value",
-                 "type":"int",
-                 "value":5
                 }, 
                 {
                  "name":"Weapon",
@@ -213,7 +168,7 @@
                 {
                  "name":"Weight",
                  "type":"int",
-                 "value":30
+                 "value":6
                 }],
          "type":"Items"
         }],
