@@ -24,6 +24,11 @@
                  "value":false
                 }, 
                 {
+                 "name":"Name",
+                 "type":"string",
+                 "value":"Apple"
+                }, 
+                {
                  "name":"Value",
                  "type":"int",
                  "value":5
@@ -41,6 +46,11 @@
          "imageheight":32,
          "imagewidth":32,
          "properties":[
+                {
+                 "name":"Name",
+                 "type":"string",
+                 "value":"Amethyst Large"
+                }, 
                 {
                  "name":"Value",
                  "type":"int",
@@ -60,6 +70,11 @@
          "imagewidth":32,
          "properties":[
                 {
+                 "name":"Name",
+                 "type":"string",
+                 "value":"Blue Crystal"
+                }, 
+                {
                  "name":"Value",
                  "type":"int",
                  "value":25
@@ -77,6 +92,11 @@
          "imageheight":32,
          "imagewidth":32,
          "properties":[
+                {
+                 "name":"Name",
+                 "type":"string",
+                 "value":"Diamond"
+                }, 
                 {
                  "name":"Value",
                  "type":"int",
@@ -96,6 +116,11 @@
          "imagewidth":32,
          "properties":[
                 {
+                 "name":"Name",
+                 "type":"string",
+                 "value":"Emerald"
+                }, 
+                {
                  "name":"Value",
                  "type":"int",
                  "value":5
@@ -113,6 +138,11 @@
          "imageheight":32,
          "imagewidth":32,
          "properties":[
+                {
+                 "name":"Name",
+                 "type":"string",
+                 "value":"Gem"
+                }, 
                 {
                  "name":"Value",
                  "type":"int",
@@ -132,6 +162,11 @@
          "imagewidth":32,
          "properties":[
                 {
+                 "name":"Name",
+                 "type":"string",
+                 "value":"Gold Coin"
+                }, 
+                {
                  "name":"Value",
                  "type":"int",
                  "value":2
@@ -149,6 +184,11 @@
          "imageheight":32,
          "imagewidth":32,
          "properties":[
+                {
+                 "name":"Name",
+                 "type":"string",
+                 "value":"Amethyst"
+                }, 
                 {
                  "name":"Value",
                  "type":"int",
@@ -171,6 +211,11 @@
                  "name":"Currency",
                  "type":"bool",
                  "value":false
+                }, 
+                {
+                 "name":"Name",
+                 "type":"string",
+                 "value":"Dagger"
                 }, 
                 {
                  "name":"Value",
@@ -199,6 +244,11 @@
                  "name":"Currency",
                  "type":"bool",
                  "value":false
+                }, 
+                {
+                 "name":"Name",
+                 "type":"string",
+                 "value":"Sword"
                 }, 
                 {
                  "name":"Value",
