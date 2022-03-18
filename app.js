@@ -1,6 +1,10 @@
 import {Vector2d} from "./vector2d.js"
 import {Rect} from "./rect.js"
 // import someData from "./test.json" assert { type: "json" };
+
+//03/18/22
+//fix it so that getItem doesn't fail it 0
+
 //03/01/22
 //add player animation
 //add item collection
@@ -123,7 +127,7 @@ class TileSet {
     }
     imageElement(tileNumber) {
         if (this.columns == 0) {
-            return this.image;
+            return this.tiles[tileNumber].image;
         } else {
             throw Error("tilset is a sprite sheet")
         }
@@ -226,6 +230,30 @@ class Map {
         }
         const linearCoord = pos_t.x + pos_t.y * this.width;
         return this.layers[layer].data[linearCoord];
+    }
+
+    getItem(pos_w) {
+        const pos_t = this.worldToTile(pos_w).floor();
+        const layer = 1;
+        // TODO JDV need a better way to update map tiles
+        let bounds = new Rect(new Vector2d(0,0), new Vector2d(this.width, this.height));
+        if (!pos_t.insideOf(bounds)) {
+            return null;
+        }
+        const linearCoord = pos_t.x + pos_t.y * this.width;
+        let tileNumber = 0;
+        if (this.layers[layer].data[linearCoord]) {
+            tileNumber = this.layers[layer].data[linearCoord];
+            this.layers[layer].data[linearCoord] = 0;
+            let [tileset, number] = this.getTilesetAndNumber(tileNumber);
+            console.log("stuff", tileset.tiles[number].properties, number, tileset);
+            let name = tileset.tiles[number].properties.Name;
+            let image = tileset.imageElement(number);
+
+            return new Item(name, image);
+        }
+            return null;
+        
     }
 
     tileSize() {
@@ -346,24 +374,13 @@ class Item {
     }
 }
 
-function loadItems(doc) {
-    // imageElement(tileNumber)
-    return {
-        "apple": new Item("Apple", doc.getElementById('apple')),
-        "sword": new Item("Sword", doc.getElementById('sword')),
-        "amethyst": new Item("Amethyst", doc.getElementById('amethyst'))
-    }
-}
-
 export const run = async () => {
     let mapCurrent = await loadMap("BasicMap.json");
     let playerImage = await loadImage("Pictures/Person.png");
     let keystate = [];
     let playerPos_w = new Vector2d(128, 128); //in world coordinates
     let timestamp = performance.now();
-    let imageArray = ['wall', 'grass', 'path', 'water'];
 
-    let loadedItems = loadItems(document);
     let playerInventory = [];
 
     // document.body.onload = () => {
@@ -380,12 +397,19 @@ export const run = async () => {
                         inventoryBox.removeChild(inventoryBox.lastChild);
                       }
                     playerInventory.forEach(i => {
-                        inventoryBox.appendChild(loadedItems[i].image.cloneNode(false));
+                        inventoryBox.appendChild(i.image.cloneNode(false));
                     });
                     inventoryUI.style.visibility = "visible"
                 }
                 event.preventDefault();
                 
+            } else if (event.key == "g") {
+                
+                let item = mapCurrent.getItem(playerPos_w);
+                console.log(item);
+                if (item) {
+                    playerInventory.push(item);
+                }
             }
         });
         document.addEventListener("keyup", (event) => {
@@ -427,28 +451,9 @@ export const run = async () => {
         });*/
         
         mapCurrent.draw(ctx, viewportOrigin_w, canvasSize);
-        // TODO put this into a separate function:
-        let pCenter = playerPos_w.add(tileSize.scale(0.5));
-        let pTopLeft = playerPos_w;
-        let pTopRight = playerPos_w.add(new Vector2d(tileSize.x, 0));
-        let pBottomLeft = playerPos_w.add(new Vector2d(0, tileSize.y));
-        let pBottomRight = playerPos_w.add(tileSize);
-        //let speedPositions = [pCenter, pTopLeft, pTopRight, pBottomLeft, pBottomRight];
-        // let speed = 1;
-        // for (let i in speedPositions) {
-        //     let p = mapCurrent.getTileProperties(speedPositions[i], 0);
-        //     if (p && p.speed) {
-        //         speed += p.speed;
-        //     }
-        // }
-        // speed = speed / speedPositions.length;
+
+        
         let speed = mapCurrent.getTileSpeed(playerPos_w, 0);
-        // if (speed == 0) {
-        //     speed = 1;
-        // }
-        ///////////FIX//////////////
-        // speed =3;//= speed / speedPositions.length;
-        //console.log("Speed", speed);
 
         // Draw Person
         ctx.drawImage(playerImage, ...playerPos_w.sub(viewportOrigin_w).arr());
@@ -471,31 +476,12 @@ export const run = async () => {
         if (keystate[40]) {
             myVelocity = myVelocity.add(new Vector2d(0, 1))
         }
-        let isWalkable = true;
+
         let newplayerPos_w = playerPos_w.add(myVelocity.scale(mySpeed*dt*32));
-        {
-            let pTopLeft = newplayerPos_w;
-            let pTopRight = newplayerPos_w.add(new Vector2d(tileSize.x, 0));
-            let pBottomLeft = newplayerPos_w.add(new Vector2d(0, tileSize.y));
-            let pBottomRight = newplayerPos_w.add(tileSize);
-            let speedPositions = [pTopLeft, pTopRight, pBottomLeft, pBottomRight];
-            for (let i in speedPositions) {
-                let p = mapCurrent.getTileProperties(speedPositions[i], 0);
-                if (!p || (p.hasOwnProperty(isWalkable) && p.isWalkable == false)) {
-                    isWalkable = false;
-                }
-            }
-            if (!mapCurrent.getTileSpeed(newplayerPos_w, 0)) {
-                isWalkable = false;
-            }
-            //!!!!!!!!REMOVE!!!!!!!!!!!!!
-            // isWalkable = true;
-        }
-        // if (isWalkable(newplayerPos_w) && isWalkable(newplayerPos_w.add(Vector2d.fromScalar(32))))
-        // {
-        if (isWalkable) {
+        if (!!mapCurrent.getTileSpeed(newplayerPos_w, 0)) {
             playerPos_w = newplayerPos_w;
-        }
+        }        
+
         window.requestAnimationFrame(draw);
     }
 
