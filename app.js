@@ -2,6 +2,10 @@ import {Vector2d} from "./vector2d.js"
 import {Rect} from "./rect.js"
 // import someData from "./test.json" assert { type: "json" };
 
+//03/28/22
+//fix inventory (move items from inventory to wearing)
+//make inventory display prettier
+
 //03/18/22
 //fix it so that getItem doesn't fail it 0
 
@@ -167,6 +171,14 @@ class Map {
         this.count = 0;
 
     }
+    getWangProperties(pos_w, layer, i) {
+        let wang = this.getWangTiles(pos_w, layer, i);
+        if (!wang) {
+            return null;
+        }
+        let [tileset, number] = wang;
+        return tileset.wangsets[0].colors[tileset.wangsets[0].wangtiles[number][i] - 1].properties;
+    }
     getTileSpeed(pos_w, layer) {
         let speed = 0;
         let top_right = 1;
@@ -174,25 +186,30 @@ class Map {
         let bottom_left = 5;
         let top_left = 7;
         let tileSize = new Vector2d(this.tilewidth, this.tileheight);
-        let tileset = null;
-        let number = null;
+        
+        let properties = null;
 
         let pTopLeft = pos_w;
-        [tileset, number] = this.getWangTiles(pTopLeft, layer, bottom_right);
-        speed += tileset.wangsets[0].colors[tileset.wangsets[0].wangtiles[number][bottom_right] - 1].properties.SpeedTileSet;
+        properties = this.getWangProperties(pTopLeft, layer, bottom_right);
+        if (!properties) { return 0; }
+        speed += properties.SpeedTileSet;
 
         let pTopRight = pos_w.add(new Vector2d(tileSize.x, 0));
-        [tileset, number] = this.getWangTiles(pTopRight, layer, bottom_left);
-        speed += tileset.wangsets[0].colors[tileset.wangsets[0].wangtiles[number][bottom_left] - 1].properties.SpeedTileSet;
+        properties = this.getWangProperties(pTopRight, layer, bottom_left);
+        if (!properties) { return 0; }
+        speed += properties.SpeedTileSet;
 
 
         let pBottomLeft = pos_w.add(new Vector2d(0, tileSize.y));
-        [tileset, number] = this.getWangTiles(pBottomLeft, layer, top_right);
-        speed += tileset.wangsets[0].colors[tileset.wangsets[0].wangtiles[number][top_right] - 1].properties.SpeedTileSet;
+        properties = this.getWangProperties(pBottomLeft, layer, top_right);
+        if (!properties) { return 0; }
+        speed += properties.SpeedTileSet;
 
         let pBottomRight = pos_w.add(tileSize);
-        [tileset, number] = this.getWangTiles(pBottomRight, layer, top_left);
-        speed += tileset.wangsets[0].colors[tileset.wangsets[0].wangtiles[number][top_left] - 1].properties.SpeedTileSet;
+        properties = this.getWangProperties(pBottomRight, layer, top_left);
+        if (!properties) { return 0; }
+        speed += properties.SpeedTileSet;
+        
         return speed / 4;
     }
 
@@ -233,7 +250,7 @@ class Map {
     }
 
     getItem(pos_w) {
-        const pos_t = this.worldToTile(pos_w).floor();
+        const pos_t = this.worldToTile(pos_w).add(new Vector2d(0.5, 0.5)).floor();
         const layer = 1;
         // TODO JDV need a better way to update map tiles
         let bounds = new Rect(new Vector2d(0,0), new Vector2d(this.width, this.height));
@@ -374,6 +391,14 @@ class Item {
     }
 }
 
+
+class Person {
+
+}
+class Player {
+    
+}
+
 export const run = async () => {
     let mapCurrent = await loadMap("BasicMap.json");
     let playerImage = await loadImage("Pictures/Person.png");
@@ -382,6 +407,8 @@ export const run = async () => {
     let timestamp = performance.now();
 
     let playerInventory = [];
+    let draggedItem = null;
+
 
     // document.body.onload = () => {
         updateCanvasSize(document, document.getElementById('canvas'));
@@ -397,7 +424,14 @@ export const run = async () => {
                         inventoryBox.removeChild(inventoryBox.lastChild);
                       }
                     playerInventory.forEach(i => {
-                        inventoryBox.appendChild(i.image.cloneNode(false));
+                        let x = i.image.cloneNode(false);
+                        x.draggable = true;                        
+                        x.addEventListener("dragstart", (event) => {
+                            draggedItem = event.target;
+                            // event.preventDefault()
+                        })
+                        inventoryBox.appendChild(x);
+                        
                     });
                     inventoryUI.style.visibility = "visible"
                 }
@@ -406,10 +440,11 @@ export const run = async () => {
             } else if (event.key == "g") {
                 
                 let item = mapCurrent.getItem(playerPos_w);
-                console.log(item);
+                console.log("test",item);
                 if (item) {
                     playerInventory.push(item);
                 }
+                event.preventDefault();
             }
         });
         document.addEventListener("keyup", (event) => {
@@ -420,6 +455,29 @@ export const run = async () => {
         }, false);
         window.requestAnimationFrame(draw);
     // }
+    
+    const head = document.getElementById('personHead');
+    head.addEventListener("dragstart", (event) => {
+        draggedItem = event.target;
+        // event.preventDefault();
+    })
+    head.addEventListener("dragover", (event) => {
+        event.preventDefault();
+    })
+    head.addEventListener("dragenter", (event) => {
+        event.target.classList.add("dragHover");
+        event.preventDefault();
+    })
+    head.addEventListener("dragleave", (event) => {
+        event.target.classList.remove("dragHover");
+        event.preventDefault();
+    })
+    head.addEventListener("drop", (event) => {
+        draggedItem.parentNode.removeChild( draggedItem );
+        event.target.appendChild( draggedItem );
+        event.preventDefault();
+    })
+
 
 
     //haha I am in your codes!
