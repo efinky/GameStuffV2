@@ -1,0 +1,14 @@
+{ "columns":6,
+ "image":"Pictures\/spriteSheets\/monstersheet.png",
+ "imageheight":128,
+ "imagewidth":192,
+ "margin":0,
+ "name":"Monsters",
+ "spacing":0,
+ "tilecount":24,
+ "tiledversion":"1.5.0",
+ "tileheight":32,
+ "tilewidth":32,
+ "type":"tileset",
+ "version":1.5
+}

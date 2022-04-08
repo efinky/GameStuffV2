@@ -111,7 +111,10 @@ async function loadTileset(path) {
 
     return new TileSet(data);
 }
-
+async function loadPlayer() {
+    let data = await (await fetch("Player.json"));
+    let animation = {}
+}
 async function loadMap(path) {
     let data = await (await fetch(path)).json();
     let tilesets = {}
@@ -393,11 +396,35 @@ class Item {
 
 
 class Person {
+    constructor(name) {
+        this.name = name;
+        this.inventory = [];
+        this.equipped = {
+            "head" : null,
+            "leftHand" : null,
+            "rightHand" : null,
+            "torso" : null,
+            "legs" : null,
+            "leftLeg" : null,
+            "rightLeg" : null
+        }
+        //used to animate step
+        this.rightStep = true;
+        //used to control direction facing
+        this.direction = 1;
+        this.images = []
+    }
+    //up is 1, right is 2, down is 3 and left is 4
+    move(direction) {
+        this.rightStep = !this.rightStep;
 
+    }
 }
-class Player {
+class Player extends Person {
     
 }
+
+
 
 export const run = async () => {
     let mapCurrent = await loadMap("BasicMap.json");
