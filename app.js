@@ -72,7 +72,7 @@ async function loadTileset(path) {
                     properties[data.wangsets[0].colors[i].properties[j].name] = data.wangsets[0].colors[i].properties[j].value;
                 }
                 data.wangsets[0].colors[i].properties = properties;
-                console.log(properties);
+                //console.log(properties);
             }
         }
         let wangtiles = {};
@@ -111,10 +111,47 @@ async function loadTileset(path) {
 
     return new TileSet(data);
 }
-async function loadPlayer() {
-    let data = await (await fetch("Player.json"));
-    let animation = {}
+async function loadPlayerImages(path) {
+   
+    let data = await (await fetch(path)).json();
+    let playerImages = {};
+    let image = await loadImage(data.image);
+    //data.image = image;
+      
+    if (data.tiles) {
+        for (let i in data.tiles) {
+            if (data.tiles[i].properties) {
+                let properties = {}
+                for (let j in data.tiles[i].properties) {
+                    properties[data.tiles[i].properties[j].name] = data.tiles[i].properties[j].value;
+                }
+                data.tiles[i].properties = properties;
+            }
+
+        }
+    }
+    for(let i in data.tiles) {
+        //let classList = []
+        let pClass = data.tiles[i].properties["Class"];
+        let pDir = data.tiles[i].properties["AnimationFrame"];
+        let pStep = data.tiles[i].properties["Step"];
+        if (!playerImages[pClass]) {
+            playerImages[pClass] = {};
+        }
+        if (!playerImages[pClass][pDir]) {
+            playerImages[pClass][pDir] = {};
+        }
+        playerImages[pClass][pDir][pStep] = data.tiles[i].id;
+        
+    }
+    playerImages["image"] = image;
+     
+
+    
+
+    return new PlayerSet(playerImages, data);
 }
+
 async function loadMap(path) {
     let data = await (await fetch(path)).json();
     let tilesets = {}
@@ -127,7 +164,31 @@ async function loadMap(path) {
     data.loadedTilesets = tilesets;
     return new Map(data);
 }
+class PlayerSet {
+    constructor(playerImageIds, data) {
+        this.image = playerImageIds["image"];
+        this.playerImageIds = playerImageIds;
+        this.data = data;
+    }
 
+    getPlayerImageId(pClass, dir, step) {
+        console.log("step", step);
+        return this.playerImageIds[pClass][dir][step];
+    }
+    draw(id, ctx, dest) {
+
+       
+        const x = id % this.data.columns;
+        const y = Math.floor(id / this.data.columns);
+        const src = new Vector2d(x, y);
+
+        let tileSize = new Vector2d(this.data.tilewidth, this.data.tileheight);
+
+        ctx.drawImage(this.image, ...src.mul(tileSize).arr(), ...tileSize.arr(), ...dest.arr(), ...tileSize.arr());
+        
+    }
+
+}
 class TileSet {
     constructor(tileset) {
         Object.assign(this, tileset);
@@ -265,15 +326,17 @@ class Map {
         if (this.layers[layer].data[linearCoord]) {
             tileNumber = this.layers[layer].data[linearCoord];
             this.layers[layer].data[linearCoord] = 0;
-            let [tileset, number] = this.getTilesetAndNumber(tileNumber);
-            console.log("stuff", tileset.tiles[number].properties, number, tileset);
-            let name = tileset.tiles[number].properties.Name;
-            let image = tileset.imageElement(number);
-
-            return new Item(name, image);
+            return this.getItemByTileNumber(tileNumber);
         }
-            return null;
-        
+        return null;
+    }
+
+    getItemByTileNumber(tileNumber) {
+        let [tileset, number] = this.getTilesetAndNumber(tileNumber);
+        let name = tileset.tiles[number].properties.Name;
+        let image = tileset.imageElement(number);
+
+        return new Item(name, image, tileNumber);
     }
 
     tileSize() {
@@ -388,16 +451,18 @@ class Map {
 }
 
 class Item {
-    constructor(name, image) {
+    constructor(name, image, tileNumber) {
         this.name = name;
         this.image = image;
+        this.tileNumber = tileNumber;
     }
 }
 
 
 class Person {
-    constructor(name) {
+    constructor(name, pClass) {
         this.name = name;
+        this.class = pClass;
         this.inventory = [];
         this.equipped = {
             "head" : null,
@@ -405,19 +470,24 @@ class Person {
             "rightHand" : null,
             "torso" : null,
             "legs" : null,
-            "leftLeg" : null,
-            "rightLeg" : null
+            "leftFoot" : null,
+            "rightFoot" : null
         }
         //used to animate step
-        this.rightStep = true;
+        this.step = 0;
         //used to control direction facing
         this.direction = 1;
         this.images = []
+        this.lastStepPos = new Vector2d(0, 0);
     }
     //up is 1, right is 2, down is 3 and left is 4
-    move(direction) {
-        this.rightStep = !this.rightStep;
-
+    move(direction, pos) {
+        if (this.direction != direction || this.lastStepPos.distance(pos) > 20.0) {
+            this.step = this.step == 0 ? 1 : 0;
+            this.lastStepPos = pos;
+        }
+    
+        this.direction = direction;
     }
 }
 class Player extends Person {
@@ -429,11 +499,12 @@ class Player extends Person {
 export const run = async () => {
     let mapCurrent = await loadMap("BasicMap.json");
     let playerImage = await loadImage("Pictures/Person.png");
+    let playerSet = await loadPlayerImages("Player.json");
     let keystate = [];
     let playerPos_w = new Vector2d(128, 128); //in world coordinates
     let timestamp = performance.now();
-
-    let playerInventory = [];
+    let player = new Person("Bob", "Warrior")
+    
     let draggedItem = null;
 
 
@@ -450,9 +521,11 @@ export const run = async () => {
                     while (inventoryBox.firstChild) {
                         inventoryBox.removeChild(inventoryBox.lastChild);
                       }
-                    playerInventory.forEach(i => {
+                    player.inventory.forEach(i => {
                         let x = i.image.cloneNode(false);
-                        x.draggable = true;                        
+                        x.dataset.tileNumber = i.tileNumber;
+                        x.dataset.name = i.name;
+                        x.draggable = true;
                         x.addEventListener("dragstart", (event) => {
                             draggedItem = event.target;
                             // event.preventDefault()
@@ -469,7 +542,7 @@ export const run = async () => {
                 let item = mapCurrent.getItem(playerPos_w);
                 console.log("test",item);
                 if (item) {
-                    playerInventory.push(item);
+                    player.inventory.push(item);
                 }
                 event.preventDefault();
             }
@@ -482,28 +555,61 @@ export const run = async () => {
         }, false);
         window.requestAnimationFrame(draw);
     // }
+
+    let equipSlots = {
+        personHead: "head",
+        personLeftHand: "lefthand",
+        personRightHand: "righthand",
+        personTorso: "torso",
+        personLegs: "legs",
+        personLeftFoot: "leftFoot",
+        personRightFoot: "rightFoot",
+        
+    }
+
+    function addDropListener(id) {
+        const elem = document.getElementById(id);
+        elem.addEventListener("dragstart", (event) => {
+            draggedItem = event.target;
+            // event.preventDefault();
+        })
+        elem.addEventListener("dragover", (event) => {
+            event.preventDefault();
+        })
+        elem.addEventListener("dragenter", (event) => {
+            event.target.classList.add("dragHover");
+            event.preventDefault();
+        })
+        elem.addEventListener("dragleave", (event) => {
+            event.target.classList.remove("dragHover");
+            event.preventDefault();
+        })
+        elem.addEventListener("drop", (event) => {
+            if (id in equipSlots && !player.equipped[equipSlots[id]]) {
+                draggedItem.parentNode.removeChild( draggedItem );
+                let item = mapCurrent.getItemByTileNumber(draggedItem.dataset.tileNumber);
+                let inventory = []
+                let removed = false
+                for (let i in player.inventory) {
+                    if (!removed && player.inventory[i].tileNumber == item.tileNumber) {
+                        removed = true;
+                    } else {
+                        inventory.push(player.inventory[i]);
+                    }
+                }
+                player.inventory = inventory;
+                player.equipped[equipSlots[id]] = item;
+            }
+            event.target.appendChild( draggedItem );
+            event.preventDefault();
+        })    
+    } 
+
+    for (let slot in equipSlots) {
+        addDropListener(slot);
+    }
     
-    const head = document.getElementById('personHead');
-    head.addEventListener("dragstart", (event) => {
-        draggedItem = event.target;
-        // event.preventDefault();
-    })
-    head.addEventListener("dragover", (event) => {
-        event.preventDefault();
-    })
-    head.addEventListener("dragenter", (event) => {
-        event.target.classList.add("dragHover");
-        event.preventDefault();
-    })
-    head.addEventListener("dragleave", (event) => {
-        event.target.classList.remove("dragHover");
-        event.preventDefault();
-    })
-    head.addEventListener("drop", (event) => {
-        draggedItem.parentNode.removeChild( draggedItem );
-        event.target.appendChild( draggedItem );
-        event.preventDefault();
-    })
+    
 
 
 
@@ -536,30 +642,36 @@ export const run = async () => {
         });*/
         
         mapCurrent.draw(ctx, viewportOrigin_w, canvasSize);
+        let playerImageId = playerSet.getPlayerImageId(player.class, player.direction, player.step);
+        playerSet.draw(playerImageId, ctx, playerPos_w.sub(viewportOrigin_w));
 
         
         let speed = mapCurrent.getTileSpeed(playerPos_w, 0);
 
         // Draw Person
-        ctx.drawImage(playerImage, ...playerPos_w.sub(viewportOrigin_w).arr());
+        //ctx.drawImage(playerImage, ...playerPos_w.sub(viewportOrigin_w).arr());
 
         //left arrow
         let mySpeed = speed; ///currentSpeed(playerPos_w, speed);
         let myVelocity = new Vector2d(0,0);
         if (keystate[37]) {
             myVelocity = myVelocity.add(new Vector2d(-1, 0))
+            player.move(4, playerPos_w)
         }
         //right arrow
         if (keystate[39]) {
             myVelocity = myVelocity.add(new Vector2d(1, 0))
+            player.move(2, playerPos_w)
         }
         //up arrow
         if(keystate[38]) {
             myVelocity = myVelocity.add(new Vector2d(0, -1))
+            player.move(1, playerPos_w)
         }
         //down arrow
         if (keystate[40]) {
             myVelocity = myVelocity.add(new Vector2d(0, 1))
+            player.move(3, playerPos_w)
         }
 
         let newplayerPos_w = playerPos_w.add(myVelocity.scale(mySpeed*dt*32));
