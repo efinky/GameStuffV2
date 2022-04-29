@@ -54,7 +54,7 @@
                 {
                  "name":"EquippedType",
                  "type":"string",
-                 "value":"small"
+                 "value":"Small"
                 }, 
                 {
                  "name":"Name",
@@ -87,7 +87,7 @@
                 {
                  "name":"EquippedType",
                  "type":"string",
-                 "value":"small"
+                 "value":"Small"
                 }, 
                 {
                  "name":"Name",
@@ -120,7 +120,7 @@
                 {
                  "name":"EquippedType",
                  "type":"string",
-                 "value":"small"
+                 "value":"Small"
                 }, 
                 {
                  "name":"Name",
@@ -153,7 +153,7 @@
                 {
                  "name":"EquippedType",
                  "type":"string",
-                 "value":"small"
+                 "value":"Small"
                 }, 
                 {
                  "name":"Name",
@@ -186,7 +186,7 @@
                 {
                  "name":"EquippedType",
                  "type":"string",
-                 "value":"small"
+                 "value":"Small"
                 }, 
                 {
                  "name":"Name",
@@ -219,7 +219,7 @@
                 {
                  "name":"EquippedType",
                  "type":"string",
-                 "value":"small"
+                 "value":"Small"
                 }, 
                 {
                  "name":"Name",
@@ -252,7 +252,7 @@
                 {
                  "name":"EquippedType",
                  "type":"string",
-                 "value":"small"
+                 "value":"Small"
                 }, 
                 {
                  "name":"Name",

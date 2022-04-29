@@ -145,10 +145,6 @@ async function loadPlayerImages(path) {
         
     }
     playerImages["image"] = image;
-     
-
-    
-
     return new PlayerSet(playerImages, data);
 }
 
@@ -172,7 +168,7 @@ class PlayerSet {
     }
 
     getPlayerImageId(pClass, dir, step) {
-        console.log("step", step);
+        //console.log("step", step);
         return this.playerImageIds[pClass][dir][step];
     }
     draw(id, ctx, dest) {
@@ -334,9 +330,11 @@ class Map {
     getItemByTileNumber(tileNumber) {
         let [tileset, number] = this.getTilesetAndNumber(tileNumber);
         let name = tileset.tiles[number].properties.Name;
+        let properties = tileset.tiles[number].properties;
+        
         let image = tileset.imageElement(number);
 
-        return new Item(name, image, tileNumber);
+        return new Item(name, image, tileNumber, properties);
     }
 
     tileSize() {
@@ -451,12 +449,28 @@ class Map {
 }
 
 class Item {
-    constructor(name, image, tileNumber) {
+    constructor(name, image, tileNumber, properties) {
         this.name = name;
         this.image = image;
         this.tileNumber = tileNumber;
+        this.equippedType = properties.EquippedType;
+        this.type = properties.Type;
+        this.value = properties.Value;
+        this.weight = parseInt(properties.Weight);
     }
 }
+
+/*
+
+
+ * ItemTypes
+Consumable
+Small
+Hand
+Chest
+Head
+Feet
+ */
 
 
 class Person {
@@ -486,7 +500,7 @@ class Person {
             this.step = this.step == 0 ? 1 : 0;
             this.lastStepPos = pos;
         }
-    
+        
         this.direction = direction;
     }
 }
@@ -507,55 +521,6 @@ export const run = async () => {
     
     let draggedItem = null;
 
-
-    // document.body.onload = () => {
-        updateCanvasSize(document, document.getElementById('canvas'));
-        document.addEventListener("keydown", (event) => {
-            keystate[event.keyCode] = true;
-            if (event.key == "i") {
-                const inventoryUI = document.getElementById('box');
-                const inventoryBox = document.getElementById('inventoryBox');
-                if (inventoryUI.style.visibility != "hidden") {
-                    inventoryUI.style.visibility = "hidden"
-                } else {
-                    while (inventoryBox.firstChild) {
-                        inventoryBox.removeChild(inventoryBox.lastChild);
-                      }
-                    player.inventory.forEach(i => {
-                        let x = i.image.cloneNode(false);
-                        x.dataset.tileNumber = i.tileNumber;
-                        x.dataset.name = i.name;
-                        x.draggable = true;
-                        x.addEventListener("dragstart", (event) => {
-                            draggedItem = event.target;
-                            // event.preventDefault()
-                        })
-                        inventoryBox.appendChild(x);
-                        
-                    });
-                    inventoryUI.style.visibility = "visible"
-                }
-                event.preventDefault();
-                
-            } else if (event.key == "g") {
-                
-                let item = mapCurrent.getItem(playerPos_w);
-                console.log("test",item);
-                if (item) {
-                    player.inventory.push(item);
-                }
-                event.preventDefault();
-            }
-        });
-        document.addEventListener("keyup", (event) => {
-            keystate[event.keyCode] = false;
-        });
-        window.addEventListener('resize', () => {
-            updateCanvasSize(document, document.getElementById('canvas'));
-        }, false);
-        window.requestAnimationFrame(draw);
-    // }
-
     let equipSlots = {
         personHead: "head",
         personLeftHand: "lefthand",
@@ -563,44 +528,159 @@ export const run = async () => {
         personTorso: "torso",
         personLegs: "legs",
         personLeftFoot: "leftFoot",
-        personRightFoot: "rightFoot",
-        
+        personRightFoot: "rightFoot",   
     }
+
+    function updateInventory() {
+        const inventoryBox = document.getElementById('inventoryBox');
+        while (inventoryBox.firstChild) {
+            inventoryBox.removeChild(inventoryBox.lastChild);
+        }
+        player.inventory.forEach(i => {
+            let x = i.image.cloneNode(false);
+            x.dataset.tileNumber = i.tileNumber;
+            x.dataset.name = i.name;
+            x.draggable = true;
+            x.addEventListener("dragstart", (event) => {
+                draggedItem = {element: event.target, item: i, source: "inventory"};
+                // This is called for inventory items only
+                // event.preventDefault()
+            })
+            inventoryBox.appendChild(x);
+        });
+
+        for (let slot in equipSlots) {
+            const elem = document.getElementById(slot);
+            // There is a loop here, but it should only be one
+            while (elem.firstChild) {
+                elem.removeChild(elem.lastChild);
+            }
+            let i = player.equipped[equipSlots[slot]];
+            if (i) {
+                let x = i.image.cloneNode(false);
+                x.dataset.tileNumber = i.tileNumber;
+                x.dataset.name = i.name;
+                x.draggable = true;
+                x.addEventListener("dragstart", (event) => {
+                    draggedItem = {element: event.target, item: i, source: "inventory"};
+                    // This is called for inventory items only
+                    // event.preventDefault()
+                })
+                elem.appendChild(x)
+            }
+        }
+    }
+
+    const inventoryBox = document.getElementById('inventoryBox');
+    inventoryBox.addEventListener("dragover", (event) => {
+        if (inventoryBox != event.target || draggedItem.source == "inventory") { return; }
+        event.preventDefault();
+    })
+    inventoryBox.addEventListener("dragenter", (event) => {
+        if (inventoryBox != event.target || draggedItem.source == "inventory") { return; }
+        inventoryBox.classList.add("dragHover");
+        event.preventDefault();
+    })
+    inventoryBox.addEventListener("dragleave", (event) => {
+        if (inventoryBox != event.target || draggedItem.source == "inventory") { return; }
+        inventoryBox.classList.remove("dragHover");
+        event.preventDefault();
+    })
+    inventoryBox.addEventListener("drop", (event) => {
+        if (inventoryBox != event.target || draggedItem.source == "inventory") { return; }
+
+        let equippedItem = player.equipped[equipSlots[draggedItem.source]];
+        if (equippedItem) {
+            delete player.equipped[equipSlots[draggedItem.source]];
+            player.inventory.push(equippedItem);
+        }
+        inventoryBox.classList.remove("dragHover");
+        updateInventory()
+        event.preventDefault();
+    })
+
+
+
+    updateCanvasSize(document, document.getElementById('canvas'));
+    document.addEventListener("keydown", (event) => {
+        keystate[event.keyCode] = true;
+        if (event.key == "i") {
+            const inventoryUI = document.getElementById('box');
+            if (inventoryUI.style.visibility != "hidden") {
+                inventoryUI.style.visibility = "hidden"
+            } else {
+                updateInventory()
+                inventoryUI.style.visibility = "visible"
+            }
+            event.preventDefault();
+            
+        } else if (event.key == "g") {
+            
+            let item = mapCurrent.getItem(playerPos_w);
+            console.log("test",item);
+            if (item) {
+                player.inventory.push(item);
+            }
+            event.preventDefault();
+        }
+    });
+    document.addEventListener("keyup", (event) => {
+        keystate[event.keyCode] = false;
+    });
+    window.addEventListener('resize', () => {
+        updateCanvasSize(document, document.getElementById('canvas'));
+    }, false);
+    window.requestAnimationFrame(draw);
+
+
 
     function addDropListener(id) {
         const elem = document.getElementById(id);
         elem.addEventListener("dragstart", (event) => {
-            draggedItem = event.target;
+            
+            draggedItem = {element: event.target, item: player.equipped[equipSlots[id]], source: id}
+            //delete player.equipped[equipSlots[id]];
+            // This is called for equip slots only
             // event.preventDefault();
         })
         elem.addEventListener("dragover", (event) => {
             event.preventDefault();
         })
         elem.addEventListener("dragenter", (event) => {
-            event.target.classList.add("dragHover");
+            if (id in equipSlots && !player.equipped[equipSlots[id]] && event.target.id == id) {
+                event.target.classList.add("dragHover");
+            }
             event.preventDefault();
         })
         elem.addEventListener("dragleave", (event) => {
-            event.target.classList.remove("dragHover");
+            if (id in equipSlots && !player.equipped[equipSlots[id]] && event.target.id == id) {
+                event.target.classList.remove("dragHover");
+            }
             event.preventDefault();
         })
         elem.addEventListener("drop", (event) => {
-            if (id in equipSlots && !player.equipped[equipSlots[id]]) {
-                draggedItem.parentNode.removeChild( draggedItem );
-                let item = mapCurrent.getItemByTileNumber(draggedItem.dataset.tileNumber);
-                let inventory = []
-                let removed = false
-                for (let i in player.inventory) {
-                    if (!removed && player.inventory[i].tileNumber == item.tileNumber) {
-                        removed = true;
-                    } else {
-                        inventory.push(player.inventory[i]);
+            if (id in equipSlots && !player.equipped[equipSlots[id]] && event.target.id == id) {
+                // draggedItem.parentNode.removeChild( draggedItem );
+                let item = mapCurrent.getItemByTileNumber(draggedItem.element.dataset.tileNumber);
+                if (draggedItem.source == "inventory") {
+                    let inventory = []
+                    let removed = false
+                    for (let i in player.inventory) {
+                        if (!removed && player.inventory[i].tileNumber == item.tileNumber) {
+                            removed = true;
+                        } else {
+                            inventory.push(player.inventory[i]);
+                        }
                     }
+                    player.inventory = inventory;
+                } else {
+                    delete player.equipped[equipSlots[draggedItem.source]];
                 }
-                player.inventory = inventory;
                 player.equipped[equipSlots[id]] = item;
+                // event.target.appendChild( draggedItem.element );
+                event.target.classList.remove("dragHover");
+                updateInventory()
             }
-            event.target.appendChild( draggedItem );
             event.preventDefault();
         })    
     } 
