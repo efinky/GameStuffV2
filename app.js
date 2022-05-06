@@ -1,3 +1,5 @@
+// @ts-check
+
 import {Vector2d} from "./vector2d.js"
 import {Rect} from "./rect.js"
 // import someData from "./test.json" assert { type: "json" };
@@ -523,12 +525,38 @@ export const run = async () => {
 
     let equipSlots = {
         personHead: "head",
-        personLeftHand: "lefthand",
-        personRightHand: "righthand",
+        personLeftHand: "leftHand",
+        personRightHand: "rightHand",
         personTorso: "torso",
         personLegs: "legs",
         personLeftFoot: "leftFoot",
         personRightFoot: "rightFoot",   
+    }
+    /* ItemTypes
+Consumable
+Small
+Hand
+Chest
+Head
+Feet
+ */
+    function equipableSlots(equipType) {
+        switch(equipType) {
+            case "Hand":
+                return ["leftHand", "rightHand"];
+            case "Chest":
+                return ["torso"];
+            case "Legs":
+                return ["legs"];
+            case "Feet":
+                return ["leftFoot", "rightFoot"];
+            default:
+                return [];
+        }
+    }
+
+    function equipableInSlot(equipType, slot) {
+        return equipableSlots(equipType).includes(slot);
     }
 
     function updateInventory() {
@@ -647,21 +675,25 @@ export const run = async () => {
             event.preventDefault();
         })
         elem.addEventListener("dragenter", (event) => {
-            if (id in equipSlots && !player.equipped[equipSlots[id]] && event.target.id == id) {
+            event.preventDefault();
+            let item = mapCurrent.getItemByTileNumber(draggedItem.element.dataset.tileNumber);
+            if (id in equipSlots && !player.equipped[equipSlots[id]] && event.target.id == id && equipableInSlot(item.equippedType, equipSlots[id])) {
                 event.target.classList.add("dragHover");
             }
-            event.preventDefault();
         })
         elem.addEventListener("dragleave", (event) => {
-            if (id in equipSlots && !player.equipped[equipSlots[id]] && event.target.id == id) {
+            event.preventDefault();
+            let item = mapCurrent.getItemByTileNumber(draggedItem.element.dataset.tileNumber);
+            if (id in equipSlots && !player.equipped[equipSlots[id]] && event.target.id == id && equipableInSlot(item.equippedType, equipSlots[id])) {
                 event.target.classList.remove("dragHover");
             }
-            event.preventDefault();
         })
         elem.addEventListener("drop", (event) => {
-            if (id in equipSlots && !player.equipped[equipSlots[id]] && event.target.id == id) {
+            event.preventDefault();
+            let item = mapCurrent.getItemByTileNumber(draggedItem.element.dataset.tileNumber);
+            if (id in equipSlots && !player.equipped[equipSlots[id]] && event.target.id == id && equipableInSlot(item.equippedType, equipSlots[id])) {
                 // draggedItem.parentNode.removeChild( draggedItem );
-                let item = mapCurrent.getItemByTileNumber(draggedItem.element.dataset.tileNumber);
+
                 if (draggedItem.source == "inventory") {
                     let inventory = []
                     let removed = false
@@ -681,7 +713,6 @@ export const run = async () => {
                 event.target.classList.remove("dragHover");
                 updateInventory()
             }
-            event.preventDefault();
         })    
     } 
 

@@ -1,5 +1,14 @@
+// @ts-strict
+// @ts-check
 
+/**
+ * @template T
+ */
 export class Vector2d {
+  /**
+   * @param { T } x
+   * @param { T } y
+   */
   constructor(x, y) {
     this.x = x;
     this.y = y;
@@ -13,6 +22,9 @@ export class Vector2d {
     return [this.x, this.y];
   }
 
+  /**
+   * @param { Rect<T> } rect
+   */
   clamp(rect) {
     const vect = new this.constructor(this.x, this.y)
     if (vect.x < rect.tl.x) {
