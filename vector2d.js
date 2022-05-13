@@ -1,32 +1,31 @@
 // @ts-strict
 // @ts-check
 
-/**
- * @template T
- */
+import { Rect } from "./rect.js"
+
 export class Vector2d {
   /**
-   * @param { T } x
-   * @param { T } y
+   * @param { number } x
+   * @param { number } y
    */
   constructor(x, y) {
     this.x = x;
     this.y = y;
   }
 
-  static fromScalar = function (scalar) {
+  /** @param {number} scalar */
+  static fromScalar(scalar) {
     return new Vector2d(scalar, scalar);
   }
 
+ 
   arr() {
     return [this.x, this.y];
   }
 
-  /**
-   * @param { Rect<T> } rect
-   */
+  /** @param { Rect } rect */
   clamp(rect) {
-    const vect = new this.constructor(this.x, this.y)
+    const vect = new Vector2d(this.x, this.y)
     if (vect.x < rect.tl.x) {
       vect.x = rect.tl.x;
     }
@@ -41,6 +40,9 @@ export class Vector2d {
     }
     return vect;
   }
+  /**
+  @param { Rect } rect
+  */
   insideOf(rect) {
     if (this.x < rect.tl.x) {
       return false;
@@ -54,78 +56,129 @@ export class Vector2d {
     }
     return true;
   }
+  /**
+   * @param {number[][]} map
+   */
   mapLookup(map) {
     return map[Math.floor(this.y)][Math.floor(this.x)];
   }
+  /**
+  @param { Vector2d } other
+  */
   add(other) {
-    return new this.constructor(this.x + other.x, this.y + other.y);
+    return new Vector2d(this.x + other.x, this.y + other.y);
   };
+  /**
+  @param { Vector2d } other
+  */
   sub(other) {
-    return new this.constructor(this.x - other.x, this.y - other.y);
+    return new Vector2d(this.x - other.x, this.y - other.y);
   };
+  /**
+  @param { Vector2d } other
+  */
   mul(other) {
-    return new this.constructor(this.x * other.x, this.y * other.y);
+    return new Vector2d(this.x * other.x, this.y * other.y);
   };
+  /**
+  @param { Vector2d } other
+  */
   div(other) {
-    return new this.constructor(this.x / other.x, this.y / other.y);
+    return new Vector2d(this.x / other.x, this.y / other.y);
   };
+  /**
+  @param { Vector2d } other
+  */
   fmod(other) {
-    return new this.constructor(this.x % other.x, this.y % other.y);
-  };
-  mod(other) {
-    return new this.constructor(mod(this.x, other.x), mod(this.y, other.y));
+    return new Vector2d(this.x % other.x, this.y % other.y);
   };
   neg() {
-    return new this.constructor(-this.x, -this.y);
+    return new Vector2d(-this.x, -this.y);
   };
 
   floor() {
-    return new this.constructor(Math.floor(this.x), Math.floor(this.y));
+    return new Vector2d(Math.floor(this.x), Math.floor(this.y));
   };
   round() {
-    return new this.constructor(Math.round(this.x), Math.round(this.y));
+    return new Vector2d(Math.round(this.x), Math.round(this.y));
   };
   ceil() {
-    return new this.constructor(Math.ceil(this.x), Math.ceil(this.y));
+    return new Vector2d(Math.ceil(this.x), Math.ceil(this.y));
   };
 
+  /**
+  @param { Vector2d } other
+  */
   equal(other) {
     if (other === null) {
       return false;
     }
     return (this.x + 0.005 > other.x && this.x - 0.005 < other.x) && (this.y + 0.005 > other.y && this.y - 0.005 < other.y);
   };
+  /**
+  @param { Vector2d } other
+  */
   greater(other) {
     return (this.x > other.x) && (this.y > other.y);
   };
+  /**
+  @param { Vector2d } other
+  */
   less(other) {
     return (this.x < other.x) && (this.y < other.y);
   };
+  /**
+  @param { Vector2d } other
+  */
   greaterOrEqual(other) {
     return (this.x >= other.x) && (this.y >= other.y);
   };
+  /**
+  @param { Vector2d } other
+  */
   lessOrEqual(other) {
     return (this.x <= other.x) && (this.y <= other.y);
   };
 
+  /**
+  @param { number } scalar
+  */
   scale(scalar) {
-    return new this.constructor(this.x * scalar, this.y * scalar);
+    return new Vector2d(this.x * scalar, this.y * scalar);
   };
+  /**
+  @param { (a: number, b: number) => number } f
+  @param { Vector2d } other
+  */
   each(f, other) {
-    return new this.constructor(f(this.x, other.x), f(this.y, other.y));
+    return new Vector2d(f(this.x, other.x), f(this.y, other.y));
   };
+  /**
+  @param { Vector2d } other
+  */
   min(other) {
-    return new this.each(Math.min, other);
+    return this.each(Math.min, other);
   };
+  /**
+  @param { Vector2d } other
+  */
   max(other) {
-    return new this.each(Math.max, other);
+    return this.each(Math.max, other);
   };
+  /**
+   * @template T
+   * @param {(a: number, b: number) => T } f
+   * @returns T
+   */
   reduce(f) {
     return f(this.x, this.y);
   };
   sum() {
     return this.x + this.y;
   };
+  /**
+  @param { Vector2d } other
+  */
   dot(other) {
     return (this.x * other.x) + (this.y * other.y);
   };
@@ -134,17 +187,20 @@ export class Vector2d {
   };
 
   perpendicular() {
-    return new this.constructor(-this.y, this.x);
+    return new Vector2d(-this.y, this.x);
   };
 
   normalize() {
-    var m = this.magnitude();
-    if (m === 0) { return new this.constructor(0, 0); }
-    else { return new this.constructor(this.x / m, this.y / m); }
+    let m = this.magnitude();
+    if (m === 0) { return new Vector2d(0, 0); }
+    else { return new Vector2d(this.x / m, this.y / m); }
   };
 
+  /**
+   * @param {number} dist
+   */
   clipTo(dist) {
-    var mag = this.magnitude();
+    let mag = this.magnitude();
     if (mag > dist) {
       return this.scale(dist / mag);
     } else {
@@ -153,7 +209,7 @@ export class Vector2d {
   };
 
   abs() {
-    return new this.constructor(Math.abs(this.x), Math.abs(this.y));
+    return new Vector2d(Math.abs(this.x), Math.abs(this.y));
   };
 
   maxElem() {
@@ -165,36 +221,47 @@ export class Vector2d {
   }
 
   closestCardinal() {
-    var absVec = this.abs();
+    let absVec = this.abs();
     if (absVec.x >= absVec.y) {
-      return new this.constructor(this.x / absVec.x, 0);
+      return new Vector2d(this.x / absVec.x, 0);
     } else {
-      return new this.constructor(0, this.y / absVec.y);
+      return new Vector2d(0, this.y / absVec.y);
     }
   }
 
+  /** @param { Vector2d } other */
   distance(other) {
     return this.sub(other).magnitude();
   };
+  /** @param { Vector2d } other */
   directionTo(other) {
     return other.sub(this).normalize();
   };
+  /**
+  @param { Vector2d } to
+  @param { (x: Vector2d) => void } f
+  */
   eachGridPoint(to, f) {
-    var diff = to.sub(this);
-    for (var x = 0; x < diff.x; x++) {
-      for (var y = 0; y < diff.y; y++) {
-        var point = this.add(new this.constructor(x, y));
+    let diff = to.sub(this);
+    for (let x = 0; x < diff.x; x++) {
+      for (let y = 0; y < diff.y; y++) {
+        let point = this.add(new Vector2d(x, y));
         f(point);
       }
     }
   };
+  /**
+   * @template T
+   * @param {{key: Vector2d, value: T}[]} vectorDict
+   */
   lookupByDir(vectorDict) {
-    var vectorDictClone = vectorDict.slice(0);
-    var obj = this;
+    let vectorDictClone = [...vectorDict];
+    let obj = this;
+
     vectorDictClone.sort(function (a, b) {
-      var thisN = obj.normalize();
-      var aN = a.key.normalize();
-      var bN = b.key.normalize();
+      let thisN = obj.normalize();
+      let aN = a.key.normalize();
+      let bN = b.key.normalize();
       return thisN.dot(bN) - thisN.dot(aN);
     });
     return vectorDictClone[0].value;

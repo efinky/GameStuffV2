@@ -4,6 +4,7 @@ import {Vector2d} from "./vector2d.js"
 import {Rect} from "./rect.js"
 // import someData from "./test.json" assert { type: "json" };
 
+// Define type for itemtype
 //03/28/22
 //fix inventory (move items from inventory to wearing)
 //make inventory display prettier
@@ -47,12 +48,21 @@ import {Rect} from "./rect.js"
 //animations?
 //pick up items!!!! (draw items to map first)
 
+/**
+ * 
+ * @param {string} url 
+ * @returns 
+ */
 async function loadJSON(url) {
     let resp = await fetch(url);
     let json = await resp.json();
     return json;
 }
-
+/**
+ * 
+ * @param {string} url 
+ * @returns 
+ */
 async function loadImage(url) {
     let resp = await fetch(url);
     let blob = await resp.blob();
@@ -63,7 +73,51 @@ async function loadImage(url) {
 }
 
 
+/**
+ * @typedef {Object} NumberProperty
+ * @property {string} name
+ * @property {"int"} type
+ * @property {number} value
+*/
+
+/**
+ * @typedef {Object} StringProperty
+ * @property {string} name
+ * @property {"string"} type
+ * @property {string} value
+*/
+
+/**
+ * @typedef {NumberProperty | StringProperty } TilesetProperty
+*/
+
+/**
+ * @typedef {Object} TilesetColors
+ * @property {TilesetProperty[]} properties
+*/
+
+/**
+ * @typedef {Object} Wangset
+ * @property {TilesetColors[]} colors
+ * @property {number} prop2
+ * @property {number=} prop3
+ * @prop {number} [prop4]
+ * @prop {number} [prop5=42]
+ */
+
+/**
+ * @typedef {Object} TilesetData
+ * @property {Wangset[]} wangsets
+ * @property {Wangset[]} wangtiles
+ */
+ 
+/**
+ * 
+ * @param {string} path 
+ * @returns 
+ */
 async function loadTileset(path) {
+    /** @type {TilesetData} */
     let data = await (await fetch(path)).json();
 //////////////////////////////////////////////////////////
     if (data.wangsets) {
