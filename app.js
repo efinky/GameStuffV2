@@ -312,7 +312,7 @@ class TileSet {
     constructor(tileset) {
         /** @type {TileSetBetter } */
         this.tileset = {
-            tilesetType: (tileset.columns == 0) ? "imageList" : "spriteSheet";
+            tilesetType: (tileset.columns == 0) ? "imageList" : "spriteSheet"
         };
         /** @type {TilesetType} */
         this.tilesetType = (tileset.columns == 0) ? "imageList" : "spriteSheet";
