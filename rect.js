@@ -37,7 +37,7 @@ export class Rect {
   };
   /** @param { (x: Vector2d) => void } f */
   eachGridPoint(f) {
-    this.tl.eachGridPoint(f, this.br);
+    this.tl.eachGridPoint(this.br, f);
   };
   /** @param { (x: Vector2d) => Vector2d } f */
   map(f) {

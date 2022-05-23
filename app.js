@@ -49,19 +49,18 @@ import {Rect} from "./rect.js"
 //pick up items!!!! (draw items to map first)
 
 /**
- * 
- * @param {string} url 
- * @returns 
+ * @param {string} url
+ * @returns any
  */
 async function loadJSON(url) {
     let resp = await fetch(url);
     let json = await resp.json();
     return json;
 }
+
 /**
- * 
- * @param {string} url 
- * @returns 
+ * @param {string} url
+ * @returns { Promise<HTMLImageElement> }
  */
 async function loadImage(url) {
     let resp = await fetch(url);
@@ -71,7 +70,17 @@ async function loadImage(url) {
     image.src = imageUrl;
     return image;
 }
-
+ //image ? if spritesheet
+        //columns
+        //tiles[]
+        //  image ? if imagelist
+        //  properties
+        //wangsets[]
+        //  colors[]
+        //      properties
+        //  wangtiles[]
+        //      tileid
+        //      wangid[]
 
 /**
  * @typedef {Object} NumberProperty
@@ -97,20 +106,30 @@ async function loadImage(url) {
 */
 
 /**
- * @typedef {Object} Wangset
+ * @typedef {Object} WangSet
  * @property {TilesetColors[]} colors
- * @property {number} prop2
- * @property {number=} prop3
- * @prop {number} [prop4]
- * @prop {number} [prop5=42]
+ * @property {WangTile[]} wangtiles
+ */
+
+/**
+ * { 
+ *   "tileid":192,
+ *   "wangid":[0, 3, 0, 3, 0, 3, 0, 3]
+ * }
+ * @typedef {Object} WangTile
+ * @property {number} tileid
+ * @property {number[]} wangid
  */
 
 /**
  * @typedef {Object} TilesetData
- * @property {Wangset[]} wangsets
- * @property {Wangset[]} wangtiles
+ * @property {WangSet[]} wangsets
  */
- 
+
+/**
+ * @typedef { { [name: string]: number | string } } Property
+ */
+
 /**
  * 
  * @param {string} path 
@@ -123,6 +142,7 @@ async function loadTileset(path) {
     if (data.wangsets) {
         for (let i in data.wangsets[0].colors) {
             if (data.wangsets[0].colors[i].properties) {
+                /** @type { Property } */
                 let properties = {}
                 for (let j in data.wangsets[0].colors[i].properties) {
                     properties[data.wangsets[0].colors[i].properties[j].name] = data.wangsets[0].colors[i].properties[j].value;
@@ -131,6 +151,7 @@ async function loadTileset(path) {
                 //console.log(properties);
             }
         }
+        /** @type { { [tileid: number]: number[] } } */
         let wangtiles = {};
         for (let i in data.wangsets[0].wangtiles) {
             if (data.wangsets[0].wangtiles[i].tileid) {
@@ -177,6 +198,7 @@ async function loadPlayerImages(path) {
     if (data.tiles) {
         for (let i in data.tiles) {
             if (data.tiles[i].properties) {
+                /** @type { Property } */
                 let properties = {}
                 for (let j in data.tiles[i].properties) {
                     properties[data.tiles[i].properties[j].name] = data.tiles[i].properties[j].value;
@@ -241,12 +263,79 @@ class PlayerSet {
     }
 
 }
+
+/**
+ * @typedef {"spriteSheet"|"imageList"} TilesetType
+ */
+
+/**
+ * @typedef Tile
+ * @property {TileNumber} tileid
+ * @property {TilesetProperty} property
+ */
+/**
+ * @typedef {number} TileNumber
+ */
+
+//image ? if spritesheet
+        //columns
+        //tiles[]
+        //  tileid
+        //  image ? if imagelist
+        //  properties
+        //wangsets[]
+        //  colors[]
+        //      properties
+        //  wangtiles[]
+        //      tileid
+        //      wangid[]
+/**
+ * @typedef {Object} SpriteSheetTileset
+ * @property {"spriteSheet"} tilesetType
+ * @property {string} image
+ * @property {Tile[]} tiles
+ * @property {WangSet} wangSet
+ */
+
+/**
+ * @typedef {Object} ImageListTileset
+ * @property {"imageList"} tilesetType
+ */
+
+
+/**
+ * @typedef {Object} TileSetBetter
+ * @property {TilesetType} 
+ */
+
 class TileSet {
     constructor(tileset) {
+        /** @type {TileSetBetter } */
+        this.tileset = {
+            tilesetType: (tileset.columns == 0) ? "imageList" : "spriteSheet";
+        };
+        /** @type {TilesetType} */
+        this.tilesetType = (tileset.columns == 0) ? "imageList" : "spriteSheet";
+        
         Object.assign(this, tileset);
+        //image ? if spritesheet
+        //columns
+        //tiles[]
+        //  image ? if imagelist
+        //  properties
+        //wangsets[]
+        //  colors[]
+        //      properties
+        //  wangtiles[]
+        //      tileid
+        //      wangid[]
     }
+
+    /** 
+     * @param {TileNumber} tileNumber
+    */
     imageElement(tileNumber) {
-        if (this.columns == 0) {
+        if (this.tilesetType == "imageList") {
             return this.tiles[tileNumber].image;
         } else {
             throw Error("tilset is a sprite sheet")
