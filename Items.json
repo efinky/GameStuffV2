@@ -955,7 +955,7 @@
                 {
                  "name":"Type",
                  "type":"string",
-                 "value":"Food"
+                 "value":"Drink"
                 }, 
                 {
                  "name":"Value",
@@ -1021,7 +1021,7 @@
                 {
                  "name":"Type",
                  "type":"string",
-                 "value":"Food"
+                 "value":"Drink"
                 }, 
                 {
                  "name":"Value",
