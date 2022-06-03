@@ -264,50 +264,6 @@ class PlayerSet {
 
 }
 
-/**
- * @typedef {"spriteSheet"|"imageList"} TilesetType
- */
-
-/**
- * @typedef Tile
- * @property {TileNumber} tileid
- * @property {TilesetProperty} property
- */
-/**
- * @typedef {number} TileNumber
- */
-
-//image ? if spritesheet
-        //columns
-        //tiles[]
-        //  tileid
-        //  image ? if imagelist
-        //  properties
-        //wangsets[]
-        //  colors[]
-        //      properties
-        //  wangtiles[]
-        //      tileid
-        //      wangid[]
-/**
- * @typedef {Object} SpriteSheetTileset
- * @property {"spriteSheet"} tilesetType
- * @property {string} image
- * @property {Tile[]} tiles
- * @property {WangSet} wangSet
- */
-
-/**
- * @typedef {Object} ImageListTileset
- * @property {"imageList"} tilesetType
- */
-
-
-/**
- * @typedef {Object} TileSetBetter
- * @property {TilesetType} 
- */
-
 class TileSet {
     constructor(tileset) {
         /** @type {TileSetBetter } */
