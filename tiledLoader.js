@@ -4,14 +4,7 @@ import {loadImage, loadJSON} from "./utils.js";
  * @typedef {"spriteSheet"|"imageList"} TilesetType
  */
 
-/**
- * @typedef Tile
- * @property {TileNumber} tileid
- * @property {TilesetProperty} property
- */
-/**
- * @typedef {number} TileNumber
- */
+
 
 //image ? if spritesheet
 //columns
@@ -28,11 +21,35 @@ import {loadImage, loadJSON} from "./utils.js";
 /**
  * @typedef {Object} SpriteSheetTileset
  * @property {"spriteSheet"} tilesetType
- * @property {string} image
+ * @property {HTMLImageElement} image
+ * @property {number} imageHeight
+ * @property {number} imageWidth
  * @property {Tile[]} tiles
- * @property {WangSet} wangSet
+ * @property {WangSet | undefined} wangSet
  */
 
+
+
+
+/** @typedef {"Wizard" | "Sorcerer" | "Pirate" | "Warrior"} PlayerClass */
+
+/** @typedef {"Food" | "Jewel" | "Currency" | "Weapon" | "Armour" | "Clothing"} ItemType*/
+
+
+/** @typedef {"Consumable" | "Small" | "Hand" | "Chest" | "Head" | "Feet"} EquipType*/
+
+
+/**
+ * @typedef {Object} MonsterProperty
+ * @property {string} image
+ */
+
+/**
+ * @typedef { Object } MonsterTile
+ * @property { number } id
+ * @property { "Monster" } type
+ * @property { MonsterProperty } properties
+*/
 
 /**
  * @typedef {Object} PlayerProperty
@@ -41,10 +58,22 @@ import {loadImage, loadJSON} from "./utils.js";
  * @property {string} Class
  */
 
-/** @typedef {"Food" | "Jewel" | "Currency" | "Weapon" | "Armour" | "Clothing"} ItemType*/
+/**
+ * @typedef { Object } PlayerTile
+ * @property { number } id
+ * @property { "Player" } type
+ * @property { PlayerProperty } properties
+*/
+
+/**
+ * @typedef { Object } TerrainTile
+ * @property { number } id
+ * @property { "Terrain" } type
+*/
 
 
-/** @typedef {"Consumable" | "Small" | "Hand" | "Chest" | "Head" | "Feet"} EquipType*/
+/** @typedef { PlayerTile | MonsterTile | TerrainTile } Tile */
+
 
 /**
  * @typedef {Object} ItemProperty
@@ -56,22 +85,6 @@ import {loadImage, loadJSON} from "./utils.js";
  */
 
 /**
- * @typedef {Object} MonsterProperty
- * @property {string} image
- */
-
-
-/**
- * @typedef { Object } PlayerTile
- * @property { number } id
- * @property { HTMLImageElement } image
- * @property { number } imageWidth
- * @property { number } imageHeight
- * @property { "Player" } type
- * @property { PlayerProperty } properties
-*/
-
-/**
  * @typedef { Object } ItemTile
  * @property { number } id
  * @property { HTMLImageElement } image
@@ -81,17 +94,8 @@ import {loadImage, loadJSON} from "./utils.js";
  * @property { ItemProperty } properties
 */
 
-/**
- * @typedef { Object } MonsterTile
- * @property { number } id
- * @property { HTMLImageElement } image
- * @property { number } imageWidth
- * @property { number } imageHeight
- * @property { "Monster" } type
- * @property { MonsterProperty } properties
-*/
 
-/** @typedef { PlayerTile | ItemTile | MonsterTile }  ImageTile */
+/** @typedef { ItemTile }  ImageTile */
 
 /**
  * @typedef {Object} ImageListTileset
@@ -105,8 +109,8 @@ import {loadImage, loadJSON} from "./utils.js";
 
 
 /**
- * @typedef {Object} TileSetBetter
- * @property {TilesetType} 
+ * @typedef {Object} TileSetBetter 
+ * @property {TilesetType} stuff
  */
 
 
@@ -166,11 +170,91 @@ import {loadImage, loadJSON} from "./utils.js";
  */
 
 /**
- * @param {any} tileset
- * @return { SpriteSheetTileset }
+ * @param {Tiled.Tileset} tileset
+ * @return { Promise<SpriteSheetTileset> }
 */
-function convertSpriteSheetTileset(tileset) {
+async function convertSpriteSheetTileset(tileset) {
+       if (tileset.image === undefined) {
+              throw Error("Tileset was missing `image` property");
+       }
+       if (tileset.imageheight === undefined) {
+              throw Error("Tileset was missing `imageheight` property");
 
+       }
+       if (tileset.imagewidth === undefined) {
+              throw Error("Tileset was missing `imagewidth` property");
+       }
+       let tiles = await Promise.all(tileset.tiles.map(convertSpriteSheetTile));
+
+       return {
+              tilesetType: "spriteSheet",
+              image: await loadImage(tileset.image),
+              imageHeight: tileset.imageheight,
+              imageWidth: tileset.imagewidth,
+              tiles: tiles,
+              wangSet: [],
+       };
+}
+
+
+/**
+ * @param {any} value
+ * @return {value is PlayerClass}
+ */
+ function isPlayerClass(value) {
+       if (
+              value === "Wizard" ||
+              value === "Sorcerer" ||
+              value === "Pirate" ||
+              value === "Warrior"
+       ) {
+              return true;
+       } else {
+              return false;
+       }
+}
+
+/**
+ * @param {Tiled.Tile} tile
+ * @return { Promise<Tile> }
+*/
+async function convertSpriteSheetTile(tile) {
+       if (tile.type === "Player") {
+              if (tile.properties === undefined) {
+                     throw Error("Item tile was missing `properties` property");
+              }
+              let playerClass = tile.properties.find((p) => p.name === "Class")?.value;
+              let frame = tile.properties.find((p) => p.name === "AnimationFrame")?.value;
+              let step = tile.properties.find((p) => p.name === "Step")?.value;
+       
+              if (typeof frame !== "number") {
+                     throw Error("Player tile was missing `AnimationFrame` property");
+              }
+              if (typeof step !== "number") {
+                     throw Error("Player tile was missing `Step` property");
+              }
+              if (typeof playerClass !== "string") {
+                     throw Error("Player tile was missing `Class` property");
+              }
+              if (!isPlayerClass(playerClass)) {
+                     throw Error("Player tile's `playerClass` property wasn't a valid `PlayerClass`");
+              }
+              return {
+                     type: tile.type,
+                     id: tile.id,
+                     properties: {
+                            Class: playerClass,
+                            Step: step,
+                            AnimationFrame: frame,
+                     },
+              };
+       // } else if (tile.type === "Monster") {
+
+       // } else if (tile.type === "Terrain") {
+
+       } else {
+              throw Error("Unknown tile type");
+       }
 }
 
 /*
@@ -291,10 +375,11 @@ async function convertImageTile(tile) {
 
 
 /**
- * @param {any} tileset
- * @return { ImageListTileset }
+ * @param {Tiled.Tileset} tileset
+ * @return { Promise<ImageListTileset> }
 */
-function convertImageListTileset(tileset) {
+async function convertImageListTileset(tileset) {
+       let tiles = await Promise.all(tileset.tiles.map(convertImageTile));
 
        return {
               tilesetType: "imageList",
@@ -302,24 +387,19 @@ function convertImageListTileset(tileset) {
               tileCount: tileset.tilecount,
               tileWidth: tileset.tilewidth,
               tileHeight: tileset.tileheight,
-              tiles: tileset.tiles.map()
-
-
-       }
+              tiles: tiles,
+       };
 }
 
 
 /**
-  * @param {any} tileset
-  * @return {SpriteSheetTileset | ImageListTileset}  */
-function convertTileset(tileset) {
+  * @param {Tiled.Tileset} tileset
+  * @return {Promise<SpriteSheetTileset | ImageListTileset>}  */
+async function convertTileset(tileset) {
        if (tileset.columns === 0) {
               return convertImageListTileset(tileset);
        } else {
               return convertSpriteSheetTileset(tileset);
        }
 }
-
-
-
 
