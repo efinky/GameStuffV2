@@ -70,65 +70,6 @@ async function loadImage(url) {
     image.src = imageUrl;
     return image;
 }
- //image ? if spritesheet
-        //columns
-        //tiles[]
-        //  image ? if imagelist
-        //  properties
-        //wangsets[]
-        //  colors[]
-        //      properties
-        //  wangtiles[]
-        //      tileid
-        //      wangid[]
-
-/**
- * @typedef {Object} NumberProperty
- * @property {string} name
- * @property {"int"} type
- * @property {number} value
-*/
-
-/**
- * @typedef {Object} StringProperty
- * @property {string} name
- * @property {"string"} type
- * @property {string} value
-*/
-
-/**
- * @typedef {NumberProperty | StringProperty } TilesetProperty
-*/
-
-/**
- * @typedef {Object} TilesetColors
- * @property {TilesetProperty[]} properties
-*/
-
-/**
- * @typedef {Object} WangSet
- * @property {TilesetColors[]} colors
- * @property {WangTile[]} wangtiles
- */
-
-/**
- * { 
- *   "tileid":192,
- *   "wangid":[0, 3, 0, 3, 0, 3, 0, 3]
- * }
- * @typedef {Object} WangTile
- * @property {number} tileid
- * @property {number[]} wangid
- */
-
-/**
- * @typedef {Object} TilesetData
- * @property {WangSet[]} wangsets
- */
-
-/**
- * @typedef { { [name: string]: number | string } } Property
- */
 
 /**
  * 
@@ -238,6 +179,7 @@ async function loadMap(path) {
     data.loadedTilesets = tilesets;
     return new Map(data);
 }
+
 class PlayerSet {
     constructor(playerImageIds, data) {
         this.image = playerImageIds["image"];

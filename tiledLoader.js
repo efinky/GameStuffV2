@@ -122,7 +122,7 @@ import { loadImage, loadJSON } from "./utils.js";
 
 /**
  * @typedef {Object} TilesetColors
- * @property {TilesetProperty[]} properties
+ * @property {number} SpeedTileSet
  */
 
 /**
@@ -155,6 +155,27 @@ import { loadImage, loadJSON } from "./utils.js";
  * @property { number } columns
  * @property {WangSet[]} wangsets
  */
+
+/**
+ * @param {Tiled.Wangset} wangset
+ * @returns {WangSet}
+ */
+function convertWangSets(wangset) {
+  // let wangset = foo.wangsets.find((s) => s.name === "TerrainSet");
+  let result = {
+    colors: wangset.colors.map((color) => {
+      let speed = color.properties?.find(
+        (p) => p.name === "SpeedTileSet"
+      )?.value;
+      if (typeof speed !== "number") {
+        throw new Error("Wangset color doesn't have a speed property");
+      }
+      return { SpeedTileSet: speed };
+    }),
+    wangtiles: wangset.wangtiles,
+  };
+  return result;
+}
 
 /**
  * @param {Tiled.Tileset} tileset
@@ -240,8 +261,11 @@ async function convertSpriteSheetTile(tile) {
       },
     };
     // } else if (tile.type === "Monster") {
-
-    // } else if (tile.type === "Terrain") {
+  } else if (tile.type === "Terrain") {
+    return {
+      type: tile.type,
+      id: tile.id,
+    };
   } else {
     throw Error("Unknown tile type");
   }
