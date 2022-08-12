@@ -1,7 +1,10 @@
 // @ts-check
 
-import {Vector2d} from "./vector2d.js"
-import {Rect} from "./rect.js"
+import { Vector2d } from "./vector2d.js"
+import { Rect } from "./rect.js"
+import { convertSpriteSheetTileset, convertTileset, isPlayerTile } from "./tiledLoader.js";
+import * as Tiled from "./tiledTypes.js";
+
 // import someData from "./test.json" assert { type: "json" };
 
 // Define type for itemtype
@@ -49,184 +52,47 @@ import {Rect} from "./rect.js"
 //pick up items!!!! (draw items to map first)
 
 /**
- * @param {string} url
- * @returns any
- */
-async function loadJSON(url) {
-    let resp = await fetch(url);
-    let json = await resp.json();
-    return json;
-}
-
-/**
- * @param {string} url
- * @returns { Promise<HTMLImageElement> }
- */
-async function loadImage(url) {
-    let resp = await fetch(url);
-    let blob = await resp.blob();
-    const imageUrl = URL.createObjectURL(blob)
-    let image = new Image();
-    image.src = imageUrl;
-    return image;
-}
- //image ? if spritesheet
-        //columns
-        //tiles[]
-        //  image ? if imagelist
-        //  properties
-        //wangsets[]
-        //  colors[]
-        //      properties
-        //  wangtiles[]
-        //      tileid
-        //      wangid[]
-
-/**
- * @typedef {Object} NumberProperty
- * @property {string} name
- * @property {"int"} type
- * @property {number} value
-*/
-
-/**
- * @typedef {Object} StringProperty
- * @property {string} name
- * @property {"string"} type
- * @property {string} value
-*/
-
-/**
- * @typedef {NumberProperty | StringProperty } TilesetProperty
-*/
-
-/**
- * @typedef {Object} TilesetColors
- * @property {TilesetProperty[]} properties
-*/
-
-/**
- * @typedef {Object} WangSet
- * @property {TilesetColors[]} colors
- * @property {WangTile[]} wangtiles
- */
-
-/**
- * { 
- *   "tileid":192,
- *   "wangid":[0, 3, 0, 3, 0, 3, 0, 3]
- * }
- * @typedef {Object} WangTile
- * @property {number} tileid
- * @property {number[]} wangid
- */
-
-/**
- * @typedef {Object} TilesetData
- * @property {WangSet[]} wangsets
- */
-
-/**
- * @typedef { { [name: string]: number | string } } Property
- */
-
-/**
- * 
  * @param {string} path 
- * @returns 
  */
 async function loadTileset(path) {
-    /** @type {TilesetData} */
+    /** @type {Tiled.Tileset} */
     let data = await (await fetch(path)).json();
-//////////////////////////////////////////////////////////
-    if (data.wangsets) {
-        for (let i in data.wangsets[0].colors) {
-            if (data.wangsets[0].colors[i].properties) {
-                /** @type { Property } */
-                let properties = {}
-                for (let j in data.wangsets[0].colors[i].properties) {
-                    properties[data.wangsets[0].colors[i].properties[j].name] = data.wangsets[0].colors[i].properties[j].value;
-                }
-                data.wangsets[0].colors[i].properties = properties;
-                //console.log(properties);
-            }
-        }
-        /** @type { { [tileid: number]: number[] } } */
-        let wangtiles = {};
-        for (let i in data.wangsets[0].wangtiles) {
-            if (data.wangsets[0].wangtiles[i].tileid) {
-                wangtiles[data.wangsets[0].wangtiles[i].tileid] = data.wangsets[0].wangtiles[i].wangid
-            } 
-        }
-        data.wangsets[0].wangtiles = wangtiles;
-    }
-
-                
-    if (data.tiles) {
-        let imagePromises = []
-        for (let i in data.tiles) {
-            if (data.tiles[i].image) {
-                imagePromises.push(loadImage(data.tiles[i].image).then((image) => {data.tiles[i].image = image}));
-            }
-            if (data.tiles[i].properties) {
-                let properties = {}
-                for (let j in data.tiles[i].properties) {
-                    properties[data.tiles[i].properties[j].name] = data.tiles[i].properties[j].value;
-                }
-                data.tiles[i].properties = properties;
-            }
-
-        }
-        await Promise.all(imagePromises);
-    }
-
-    if (data.columns != 0) {
-        // this is a spritesheet
-        let image = await loadImage(data.image);
-        data.image = image;
-    }
-
-    return new TileSet(data);
+    return new TileSet(convertTileset(data));
 }
-async function loadPlayerImages(path) {
-   
-    let data = await (await fetch(path)).json();
-    let playerImages = {};
-    let image = await loadImage(data.image);
-    //data.image = image;
-      
-    if (data.tiles) {
-        for (let i in data.tiles) {
-            if (data.tiles[i].properties) {
-                /** @type { Property } */
-                let properties = {}
-                for (let j in data.tiles[i].properties) {
-                    properties[data.tiles[i].properties[j].name] = data.tiles[i].properties[j].value;
-                }
-                data.tiles[i].properties = properties;
-            }
 
+/**
+ * @param {string} path 
+ */
+async function loadPlayerImages(path) {
+    /** @type {Tiled.Tileset} */
+    let tiled_data = await (await fetch(path)).json();
+    let data = await convertSpriteSheetTileset(tiled_data);
+
+    /** @type { { [key: string]: {[key: number]: {[key: number]: number} } } } */
+    let playerImages = {};
+    for (let tile of data.tiles) {
+        if (!isPlayerTile(tile)) {
+            continue;
         }
-    }
-    for(let i in data.tiles) {
-        //let classList = []
-        let pClass = data.tiles[i].properties["Class"];
-        let pDir = data.tiles[i].properties["AnimationFrame"];
-        let pStep = data.tiles[i].properties["Step"];
+        let pClass = tile.properties["Class"];
+        let pDir = tile.properties["AnimationFrame"];
+        let pStep = tile.properties["Step"];
         if (!playerImages[pClass]) {
             playerImages[pClass] = {};
         }
         if (!playerImages[pClass][pDir]) {
             playerImages[pClass][pDir] = {};
         }
-        playerImages[pClass][pDir][pStep] = data.tiles[i].id;
-        
+        playerImages[pClass][pDir][pStep] = tile.id;
     }
-    playerImages["image"] = image;
-    return new PlayerSet(playerImages, data);
+    return new PlayerSet(data.image, playerImages, data);
 }
 
+/**
+ * @param {string} path 
+ */
 async function loadMap(path) {
+    /** @type {Tiled.Tileset} */
     let data = await (await fetch(path)).json();
     let tilesets = {}
     for (let i in data.tilesets) {
@@ -238,28 +104,42 @@ async function loadMap(path) {
     data.loadedTilesets = tilesets;
     return new Map(data);
 }
+
 class PlayerSet {
-    constructor(playerImageIds, data) {
-        this.image = playerImageIds["image"];
+    /**
+     * @param {HTMLImageElement} image
+     * @param {{ [key: string]: {[key: number]: {[key: number]: number} } }} playerImageIds
+     * @param { import("./tiledLoader.js").SpriteSheetTileset } data
+     */
+    constructor(image, playerImageIds, data) {
+        this.image = image;
         this.playerImageIds = playerImageIds;
         this.data = data;
     }
 
+    /**
+     * @param {string} pClass
+     * @param {number} dir
+     * @param {number} step
+     */
     getPlayerImageId(pClass, dir, step) {
         //console.log("step", step);
         return this.playerImageIds[pClass][dir][step];
     }
-    draw(id, ctx, dest) {
 
-       
+    /**
+     * @param {number} id
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {Vector2d} dest
+     */
+    draw(id, ctx, dest) {
         const x = id % this.data.columns;
         const y = Math.floor(id / this.data.columns);
         const src = new Vector2d(x, y);
 
-        let tileSize = new Vector2d(this.data.tilewidth, this.data.tileheight);
+        let tileSize = new Vector2d(this.data.tileWidth, this.data.tileHeight);
 
         ctx.drawImage(this.image, ...src.mul(tileSize).arr(), ...tileSize.arr(), ...dest.arr(), ...tileSize.arr());
-        
     }
 
 }
@@ -272,7 +152,7 @@ class TileSet {
         };
         /** @type {TilesetType} */
         this.tilesetType = (tileset.columns == 0) ? "imageList" : "spriteSheet";
-        
+
         Object.assign(this, tileset);
         //image ? if spritesheet
         //columns
@@ -297,6 +177,7 @@ class TileSet {
             throw Error("tilset is a sprite sheet")
         }
     }
+
     drawTile(tileNumber, ctx, dest) {
 
         if (this.columns == 0) {
@@ -332,6 +213,13 @@ class Map {
         this.count = 0;
 
     }
+    /**
+    * 
+    * @param {Vector2d} pos_w 
+    * @param {number} layer 
+    * @param {number} i 
+    * @returns 
+    */
     getWangProperties(pos_w, layer, i) {
         let wang = this.getWangTiles(pos_w, layer, i);
         if (!wang) {
@@ -340,6 +228,12 @@ class Map {
         let [tileset, number] = wang;
         return tileset.wangsets[0].colors[tileset.wangsets[0].wangtiles[number][i] - 1].properties;
     }
+    /**
+     * 
+     * @param {Vector2D} pos_w 
+     * @param {number} layer 
+     * @returns {number}
+     */
     getTileSpeed(pos_w, layer) {
         let speed = 0;
         let top_right = 1;
@@ -347,7 +241,7 @@ class Map {
         let bottom_left = 5;
         let top_left = 7;
         let tileSize = new Vector2d(this.tilewidth, this.tileheight);
-        
+
         let properties = null;
 
         let pTopLeft = pos_w;
@@ -370,7 +264,7 @@ class Map {
         properties = this.getWangProperties(pBottomRight, layer, top_left);
         if (!properties) { return 0; }
         speed += properties.SpeedTileSet;
-        
+
         return speed / 4;
     }
 
@@ -387,7 +281,7 @@ class Map {
         // return tileset.wangtiles[number][index]
     }
 
-    
+
     getTileProperties(pos_w, layer) {
         const pos_t = this.worldToTile(pos_w).floor();
         const tileNumber = this.tileNumber(pos_t, layer);
@@ -402,7 +296,7 @@ class Map {
         }
     }
     tileNumber(pos_t, layer) {
-        let bounds = new Rect(new Vector2d(0,0), new Vector2d(this.width, this.height));
+        let bounds = new Rect(new Vector2d(0, 0), new Vector2d(this.width, this.height));
         if (!pos_t.insideOf(bounds)) {
             return null;
         }
@@ -414,7 +308,7 @@ class Map {
         const pos_t = this.worldToTile(pos_w).add(new Vector2d(0.5, 0.5)).floor();
         const layer = 1;
         // TODO JDV need a better way to update map tiles
-        let bounds = new Rect(new Vector2d(0,0), new Vector2d(this.width, this.height));
+        let bounds = new Rect(new Vector2d(0, 0), new Vector2d(this.width, this.height));
         if (!pos_t.insideOf(bounds)) {
             return null;
         }
@@ -432,7 +326,7 @@ class Map {
         let [tileset, number] = this.getTilesetAndNumber(tileNumber);
         let name = tileset.tiles[number].properties.Name;
         let properties = tileset.tiles[number].properties;
-        
+
         let image = tileset.imageElement(number);
 
         return new Item(name, image, tileNumber, properties);
@@ -442,7 +336,7 @@ class Map {
         return new Vector2d(this.tilewidth, this.tileheight);
     }
     getTilesetAndNumber(tileNumber) {
-        for (const {firstgid, source} of this.tilesets.slice().reverse()) {
+        for (const { firstgid, source } of this.tilesets.slice().reverse()) {
             if (tileNumber >= firstgid) {
                 let tileset = this.loadedTilesets[source];
                 return [tileset, tileNumber - firstgid]
@@ -477,18 +371,18 @@ class Map {
     //     let mapSizePixels = mapSize.mul(tileSize);
     //     let canvasSize = new Vector2d(canvas.width, canvas.height);
     //     let mapRect = new Rect(new Vector2d(0,0), mapSize.sub(canvasSize));
-        
-    // }
-//    tilesets(name) {
 
-//        this.
-//    } 
+    // }
+    //    tilesets(name) {
+
+    //        this.
+    //    } 
 
     draw(ctx, viewportOrigin_w, canvasSize) {
-        
+
         let mapSize = new Vector2d(this.width, this.height);
         let tileSize = new Vector2d(this.tilewidth, this.tileheight);
-        let mapTileRect = new Rect(new Vector2d(0,0), mapSize);
+        let mapTileRect = new Rect(new Vector2d(0, 0), mapSize);
         // image to draw from
         {
             const topLeftTile = this.viewportToTile(Vector2d.fromScalar(0), viewportOrigin_w).sub(Vector2d.fromScalar(1)).floor().clamp(mapTileRect);
@@ -499,7 +393,7 @@ class Map {
             //tileCoord.mul(tileSize).sub(viewportOrigin_w) < 0 no draw 
             //tileCoord.mul(tileSize).sub(viewportOrigin_w) > canvasSize no draw 
             topLeftTile.eachGridPoint(bottomRightTile, (tileCoord) => {
-                
+
                 // TODO JDV foreach layer?
                 // size of tile
                 const dest = tileCoord.mul(tileSize).sub(viewportOrigin_w);
@@ -515,9 +409,9 @@ class Map {
                 // const dest = tileCoord.mul(tileSize).sub(viewportOrigin_w);
                 // //ctx.drawImage(image, 0,0);
                 // const image = tileset.imageElement();
-            
+
                 // ctx.drawImage(image, ...src.mul(tileSize).arr(), ...tileSize.arr(), ...dest.arr(), ...tileSize.arr());
-            
+
             });
 
         }
@@ -532,8 +426,8 @@ class Map {
         //     //tileCoord.mul(tileSize).sub(viewportOrigin_w) < 0 no draw 
         //     //tileCoord.mul(tileSize).sub(viewportOrigin_w) > canvasSize no draw 
         //     topLeftTile.eachGridPoint(bottomRightTile, (tileCoord) => {
-                
-                
+
+
         //         // size of tile
         //         const tileNumber = this.layers[1].data[this.linearCoord(tileCoord)];
         //         /// source coordinates to pull image from
@@ -543,7 +437,7 @@ class Map {
         //         //ctx.drawImage(image, 0,0);
 
         //         ctx.drawImage(image, ...src.mul(tileSize).arr(), ...tileSize.arr(), ...tileCoord.mul(tileSize).sub(viewportOrigin_w).arr(), ...tileSize.arr());
-            
+
         //     });
         // }
     }
@@ -580,13 +474,13 @@ class Person {
         this.class = pClass;
         this.inventory = [];
         this.equipped = {
-            "head" : null,
-            "leftHand" : null,
-            "rightHand" : null,
-            "torso" : null,
-            "legs" : null,
-            "leftFoot" : null,
-            "rightFoot" : null
+            "head": null,
+            "leftHand": null,
+            "rightHand": null,
+            "torso": null,
+            "legs": null,
+            "leftFoot": null,
+            "rightFoot": null
         }
         //used to animate step
         this.step = 0;
@@ -601,12 +495,12 @@ class Person {
             this.step = this.step == 0 ? 1 : 0;
             this.lastStepPos = pos;
         }
-        
+
         this.direction = direction;
     }
 }
 class Player extends Person {
-    
+
 }
 
 
@@ -619,7 +513,7 @@ export const run = async () => {
     let playerPos_w = new Vector2d(128, 128); //in world coordinates
     let timestamp = performance.now();
     let player = new Person("Bob", "Warrior")
-    
+
     let draggedItem = null;
 
     let equipSlots = {
@@ -629,7 +523,7 @@ export const run = async () => {
         personTorso: "torso",
         personLegs: "legs",
         personLeftFoot: "leftFoot",
-        personRightFoot: "rightFoot",   
+        personRightFoot: "rightFoot",
     }
     /* ItemTypes
 Consumable
@@ -640,7 +534,7 @@ Head
 Feet
  */
     function equipableSlots(equipType) {
-        switch(equipType) {
+        switch (equipType) {
             case "Hand":
                 return ["leftHand", "rightHand"];
             case "Chest":
@@ -669,7 +563,7 @@ Feet
             x.dataset.name = i.name;
             x.draggable = true;
             x.addEventListener("dragstart", (event) => {
-                draggedItem = {element: event.target, item: i, source: "inventory"};
+                draggedItem = { element: event.target, item: i, source: "inventory" };
                 // This is called for inventory items only
                 // event.preventDefault()
             })
@@ -689,7 +583,7 @@ Feet
                 x.dataset.name = i.name;
                 x.draggable = true;
                 x.addEventListener("dragstart", (event) => {
-                    draggedItem = {element: event.target, item: i, source: "inventory"};
+                    draggedItem = { element: event.target, item: i, source: "inventory" };
                     // This is called for inventory items only
                     // event.preventDefault()
                 })
@@ -740,11 +634,11 @@ Feet
                 inventoryUI.style.visibility = "visible"
             }
             event.preventDefault();
-            
+
         } else if (event.key == "g") {
-            
+
             let item = mapCurrent.getItem(playerPos_w);
-            console.log("test",item);
+            console.log("test", item);
             if (item) {
                 player.inventory.push(item);
             }
@@ -764,8 +658,8 @@ Feet
     function addDropListener(id) {
         const elem = document.getElementById(id);
         elem.addEventListener("dragstart", (event) => {
-            
-            draggedItem = {element: event.target, item: player.equipped[equipSlots[id]], source: id}
+
+            draggedItem = { element: event.target, item: player.equipped[equipSlots[id]], source: id }
             //delete player.equipped[equipSlots[id]];
             // This is called for equip slots only
             // event.preventDefault();
@@ -812,14 +706,14 @@ Feet
                 event.target.classList.remove("dragHover");
                 updateInventory()
             }
-        })    
-    } 
+        })
+    }
 
     for (let slot in equipSlots) {
         addDropListener(slot);
     }
-    
-    
+
+
 
 
 
@@ -829,33 +723,33 @@ Feet
     //add mountains
     //get a better person/add animation as well.
     function draw(now) {
-        
-        let dt = (now - timestamp)/1000;
+
+        let dt = (now - timestamp) / 1000;
         timestamp = now;
         let canvas = document.getElementById('canvas');
         let ctx = canvas.getContext('2d');
         let tileSize = new Vector2d(mapCurrent.tilewidth, mapCurrent.tileheight);
-        
+
         let mapSize = new Vector2d(mapCurrent.width, mapCurrent.height).mul(tileSize);
         let canvasSize = new Vector2d(canvas.width, canvas.height);
-        let mapRect = new Rect(new Vector2d(0,0), mapSize.sub(canvasSize));
-        
+        let mapRect = new Rect(new Vector2d(0, 0), mapSize.sub(canvasSize));
+
         // Top left corner of the viewable area, in world coordinates
         let viewportOrigin_w = playerPos_w.sub(canvasSize.scale(0.5)).clamp(mapRect);
 
         //convert rect and vector2djs to classes.
-        
+
         //make map tile class that contains tiles, speed and such (or terrain type)
         //let maptileSize = new Vector2d(map[0].length, map.length);
         /*Vector2d.fromScalar(0).eachGridPoint(maptileSize, (p) => {
             ctx.drawImage(document.getElementById(imageArray[p.mapLookup(map)]), ...p.scale(32).sub(viewportOrigin_w).arr());
         });*/
-        
+
         mapCurrent.draw(ctx, viewportOrigin_w, canvasSize);
         let playerImageId = playerSet.getPlayerImageId(player.class, player.direction, player.step);
         playerSet.draw(playerImageId, ctx, playerPos_w.sub(viewportOrigin_w));
 
-        
+
         let speed = mapCurrent.getTileSpeed(playerPos_w, 0);
 
         // Draw Person
@@ -863,7 +757,7 @@ Feet
 
         //left arrow
         let mySpeed = speed; ///currentSpeed(playerPos_w, speed);
-        let myVelocity = new Vector2d(0,0);
+        let myVelocity = new Vector2d(0, 0);
         if (keystate[37]) {
             myVelocity = myVelocity.add(new Vector2d(-1, 0))
             player.move(4, playerPos_w)
@@ -874,7 +768,7 @@ Feet
             player.move(2, playerPos_w)
         }
         //up arrow
-        if(keystate[38]) {
+        if (keystate[38]) {
             myVelocity = myVelocity.add(new Vector2d(0, -1))
             player.move(1, playerPos_w)
         }
@@ -884,10 +778,10 @@ Feet
             player.move(3, playerPos_w)
         }
 
-        let newplayerPos_w = playerPos_w.add(myVelocity.scale(mySpeed*dt*32));
+        let newplayerPos_w = playerPos_w.add(myVelocity.scale(mySpeed * dt * 32));
         if (!!mapCurrent.getTileSpeed(newplayerPos_w, 0)) {
             playerPos_w = newplayerPos_w;
-        }        
+        }
 
         window.requestAnimationFrame(draw);
     }

@@ -18,7 +18,7 @@ export class Vector2d {
     return new Vector2d(scalar, scalar);
   }
 
- 
+  /** @return {[number, number]} */
   arr() {
     return [this.x, this.y];
   }

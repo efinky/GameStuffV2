@@ -19,11 +19,15 @@ import {loadImage, loadJSON} from "./utils.js";
 //      tileid
 //      wangid[]
 /**
+ * @export
  * @typedef {Object} SpriteSheetTileset
  * @property {"spriteSheet"} tilesetType
  * @property {HTMLImageElement} image
+ * @property {number} columns
  * @property {number} imageHeight
  * @property {number} imageWidth
+ * @property {number} tileHeight
+ * @property {number} tileWidth
  * @property {Tile[]} tiles
  * @property {WangSet | undefined} wangSet
  */
@@ -73,6 +77,19 @@ import {loadImage, loadJSON} from "./utils.js";
 
 
 /** @typedef { PlayerTile | MonsterTile | TerrainTile } Tile */
+
+
+/**
+ * @param {Tile} value
+ * @return {value is PlayerTile}
+ */
+export function isPlayerTile(value) {
+       if (value.type === "Player") {
+              return true;
+       } else {
+              return false;
+       }
+}
 
 
 /**
@@ -173,7 +190,7 @@ import {loadImage, loadJSON} from "./utils.js";
  * @param {Tiled.Tileset} tileset
  * @return { Promise<SpriteSheetTileset> }
 */
-async function convertSpriteSheetTileset(tileset) {
+export async function convertSpriteSheetTileset(tileset) {
        if (tileset.image === undefined) {
               throw Error("Tileset was missing `image` property");
        }
@@ -188,11 +205,14 @@ async function convertSpriteSheetTileset(tileset) {
 
        return {
               tilesetType: "spriteSheet",
+              columns: tileset.columns,
               image: await loadImage(tileset.image),
               imageHeight: tileset.imageheight,
               imageWidth: tileset.imagewidth,
+              tileHeight: tileset.tileheight,
+              tileWidth: tileset.tilewidth,
               tiles: tiles,
-              wangSet: [],
+              wangSet: undefined,
        };
 }
 
@@ -395,7 +415,7 @@ async function convertImageListTileset(tileset) {
 /**
   * @param {Tiled.Tileset} tileset
   * @return {Promise<SpriteSheetTileset | ImageListTileset>}  */
-async function convertTileset(tileset) {
+export async function convertTileset(tileset) {
        if (tileset.columns === 0) {
               return convertImageListTileset(tileset);
        } else {
