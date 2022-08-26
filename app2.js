@@ -21,12 +21,12 @@ import * as Tiled from "./tiledTypes.js";
 //fix wangsets[0] to be something nicer
 
 //02/25/22
-//add player animation 
+//add player animation
 //add item collection
 //speed/iswalkable
 
 //02/11/22
-//coordfromtilenumber - works really well for terrain (spritesheet) but how do we handle 
+//coordfromtilenumber - works really well for terrain (spritesheet) but how do we handle
 //items (not a sprite sheet)
 
 
@@ -51,17 +51,9 @@ import * as Tiled from "./tiledTypes.js";
 //animations?
 //pick up items!!!! (draw items to map first)
 
-/**
- * @param {string} path 
- */
-async function loadTileset(path) {
-    /** @type {Tiled.Tileset} */
-    let data = await (await fetch(path)).json();
-    return new TileSet(convertTileset(data));
-}
 
 /**
- * @param {string} path 
+ * @param {string} path
  */
 async function loadPlayerImages(path) {
     /** @type {Tiled.Tileset} */
@@ -88,22 +80,6 @@ async function loadPlayerImages(path) {
     return new PlayerSet(data.image, playerImages, data);
 }
 
-/**
- * @param {string} path 
- */
-async function loadMap(path) {
-    /** @type {Tiled.Tileset} */
-    let data = await (await fetch(path)).json();
-    let tilesets = {}
-    for (let i in data.tilesets) {
-        tilesets[data.tilesets[i].source] = await loadTileset(data.tilesets[i].source);
-        // let tileset = loadTileset(data.tilesets[i].source);
-        // console.log("sadf", data.tilesets[i].source);
-        // console.log("TileSet", v);
-    }
-    data.loadedTilesets = tilesets;
-    return new Map(data);
-}
 
 class PlayerSet {
     /**
@@ -145,15 +121,12 @@ class PlayerSet {
 }
 
 class TileSet {
+    /**
+     *
+     * @param {import("./tiledLoader.js").SpriteSheetTileset | import("./tiledLoader.js").ImageListTileset} tileset
+     */
     constructor(tileset) {
-        /** @type {TileSetBetter } */
-        this.tileset = {
-            tilesetType: (tileset.columns == 0) ? "imageList" : "spriteSheet"
-        };
-        /** @type {TilesetType} */
-        this.tilesetType = (tileset.columns == 0) ? "imageList" : "spriteSheet";
-
-        Object.assign(this, tileset);
+        this.tileset = tileset;
         //image ? if spritesheet
         //columns
         //tiles[]
@@ -167,29 +140,34 @@ class TileSet {
         //      wangid[]
     }
 
-    /** 
-     * @param {TileNumber} tileNumber
+    /**
+     * @param {number} tileNumber
     */
     imageElement(tileNumber) {
-        if (this.tilesetType == "imageList") {
-            return this.tiles[tileNumber].image;
+        if (this.tileset.tilesetType == "imageList") {
+            return this.tileset.tiles[tileNumber].image;
         } else {
             throw Error("tilset is a sprite sheet")
         }
     }
 
+    /**
+     *
+     * @param {number} tileNumber
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {Vector2d} dest
+     */
     drawTile(tileNumber, ctx, dest) {
-
-        if (this.columns == 0) {
-            ctx.drawImage(this.tiles[tileNumber].image, ...dest.arr());
+        if (this.tileset.tilesetType == "imageList") {
+            ctx.drawImage(this.tileset.tiles[tileNumber].image, ...dest.arr());
         } else {
-            const x = tileNumber % this.columns;
-            const y = Math.floor(tileNumber / this.columns);
+            const x = tileNumber % this.tileset.columns;
+            const y = Math.floor(tileNumber / this.tileset.columns);
             const src = new Vector2d(x, y);
 
-            let tileSize = new Vector2d(this.tilewidth, this.tileheight);
+            let tileSize = new Vector2d(this.tileset.tileWidth, this.tileset.tileHeight);
 
-            ctx.drawImage(this.image, ...src.mul(tileSize).arr(), ...tileSize.arr(), ...dest.arr(), ...tileSize.arr());
+            ctx.drawImage(this.tileset.image, ...src.mul(tileSize).arr(), ...tileSize.arr(), ...dest.arr(), ...tileSize.arr());
         }
     }
 
@@ -201,24 +179,61 @@ class TileSet {
 
 
 
+/**
+ * @param {string} path
+ */
+async function loadTileset(path) {
+    /** @type {Tiled.Tileset} */
+    let data = await (await fetch(path)).json();
+    return new TileSet(await convertTileset(data));
+  }
+
+  /**
+  * @param {string} path
+  */
+  async function loadMap(path) {
+    /** @type {Tiled.Map} */
+    let data = await (await fetch(path)).json();
+    /** @type {{[key: string]: TileSet }} */
+    let loadedTilesets = {}
+    for (let i in data.tilesets) {
+        loadedTilesets[data.tilesets[i].source] = await loadTileset(data.tilesets[i].source);
+        // let tileset = loadTileset(data.tilesets[i].source);
+        // console.log("sadf", data.tilesets[i].source);
+        // console.log("TileSet", v);
+    }
+
+    // { [key: string]: TileSet}
+
+    return new Map(data, loadedTilesets);
+
+  }
+
+
 // const tilesets = {
 //     "TileSetSheet.tsx": new TileSet(grass),
 //     "Items.tsx": new TileSet(items)
 // };
 
 class Map {
-    constructor(map) {
-        Object.assign(this, map);
+    /**
+     *
+     * @param {Tiled.Map} map
+     * @param {{[key: string]: TileSet}} tilesets
+     */
+    constructor(map, tilesets) {
+        this.map = map;
+        this.loadedTilesets = tilesets;
         // let grassTiles = new TileSet(grass);
         this.count = 0;
 
     }
     /**
-    * 
-    * @param {Vector2d} pos_w 
-    * @param {number} layer 
-    * @param {number} i 
-    * @returns 
+    *
+    * @param {Vector2d} pos_w
+    * @param {number} layer
+    * @param {number} i
+    * @returns
     */
     getWangProperties(pos_w, layer, i) {
         let wang = this.getWangTiles(pos_w, layer, i);
@@ -226,12 +241,16 @@ class Map {
             return null;
         }
         let [tileset, number] = wang;
-        return tileset.wangsets[0].colors[tileset.wangsets[0].wangtiles[number][i] - 1].properties;
+        if (tileset.tileset.tilesetType == "spriteSheet" && tileset.tileset.wangSet !== undefined) {
+            return tileset.tileset.wangSet.colors[tileset.tileset.wangSet.wangtiles[number].wangid[i] - 1];
+        } else {
+            return null;
+        }
     }
     /**
-     * 
-     * @param {Vector2D} pos_w 
-     * @param {number} layer 
+     *
+     * @param {Vector2d} pos_w
+     * @param {number} layer
      * @returns {number}
      */
     getTileSpeed(pos_w, layer) {
@@ -240,7 +259,7 @@ class Map {
         let bottom_right = 3;
         let bottom_left = 5;
         let top_left = 7;
-        let tileSize = new Vector2d(this.tilewidth, this.tileheight);
+        let tileSize = new Vector2d(this.map.tilewidth, this.map.tileheight);
 
         let properties = null;
 
@@ -270,6 +289,13 @@ class Map {
 
     //[0, top-right, 0, bottom-right, 0, bottom-left, 0, top-left]
 
+    /**
+     *
+     * @param {Vector2d} pos_w
+     * @param {number} layer
+     * @param {number} index
+     * @returns {[TileSet, number] | null}
+     */
     getWangTiles(pos_w, layer, index) {
         const pos_t = this.worldToTile(pos_w).floor();
         const tileNumber = this.tileNumber(pos_t, layer);
@@ -281,7 +307,12 @@ class Map {
         // return tileset.wangtiles[number][index]
     }
 
-
+    /**
+     *
+     * @param {Vector2d} pos_w
+     * @param {number} layer
+     * @returns
+     */
     getTileProperties(pos_w, layer) {
         const pos_t = this.worldToTile(pos_w).floor();
         const tileNumber = this.tileNumber(pos_t, layer);
@@ -289,54 +320,81 @@ class Map {
             return null
         }
         let [tileset, number] = this.getTilesetAndNumber(tileNumber);
-        if (tileset.tiles[number].properties) {
-            return tileset.tiles[number].properties;
+        let tile = tileset.tileset.tiles[number];
+        if (tile.type == "Item") {
+            return tile.properties;
         } else {
             return {};
         }
     }
+    /**
+     *
+     * @param {Vector2d} pos_t
+     * @param {number} layer
+     * @returns
+     */
     tileNumber(pos_t, layer) {
-        let bounds = new Rect(new Vector2d(0, 0), new Vector2d(this.width, this.height));
+        let bounds = new Rect(new Vector2d(0, 0), new Vector2d(this.map.width, this.map.height));
         if (!pos_t.insideOf(bounds)) {
             return null;
         }
-        const linearCoord = pos_t.x + pos_t.y * this.width;
-        return this.layers[layer].data[linearCoord];
+        const linearCoord = pos_t.x + pos_t.y * this.map.width;
+        return this.map.layers[layer].data[linearCoord];
     }
-
+    /**
+     *
+     * @param {Vector2d} pos_w
+     * @returns
+     */
     getItem(pos_w) {
         const pos_t = this.worldToTile(pos_w).add(new Vector2d(0.5, 0.5)).floor();
         const layer = 1;
         // TODO JDV need a better way to update map tiles
-        let bounds = new Rect(new Vector2d(0, 0), new Vector2d(this.width, this.height));
+        let bounds = new Rect(new Vector2d(0, 0), new Vector2d(this.map.width, this.map.height));
         if (!pos_t.insideOf(bounds)) {
             return null;
         }
-        const linearCoord = pos_t.x + pos_t.y * this.width;
+        const linearCoord = pos_t.x + pos_t.y * this.map.width;
         let tileNumber = 0;
-        if (this.layers[layer].data[linearCoord]) {
-            tileNumber = this.layers[layer].data[linearCoord];
-            this.layers[layer].data[linearCoord] = 0;
+        if (this.map.layers[layer].data[linearCoord]) {
+            tileNumber = this.map.layers[layer].data[linearCoord];
+            this.map.layers[layer].data[linearCoord] = 0;
             return this.getItemByTileNumber(tileNumber);
         }
         return null;
     }
-
+    /**
+     *
+     * @param {number} tileNumber
+     * @returns
+     */
     getItemByTileNumber(tileNumber) {
         let [tileset, number] = this.getTilesetAndNumber(tileNumber);
-        let name = tileset.tiles[number].properties.Name;
-        let properties = tileset.tiles[number].properties;
+        let itemTile = tileset.tileset.tiles[number];
+        if (itemTile.type != "Item") {
+            return null;
+        }
+        let name = itemTile.properties.name;
+        let properties = itemTile.properties;
 
         let image = tileset.imageElement(number);
 
         return new Item(name, image, tileNumber, properties);
     }
-
+    /**
+     *
+     * @returns
+     */
     tileSize() {
-        return new Vector2d(this.tilewidth, this.tileheight);
+        return new Vector2d(this.map.tilewidth, this.map.tileheight);
     }
+    /**
+     *
+     * @param {number} tileNumber
+     * @returns {[TileSet, number]}
+     */
     getTilesetAndNumber(tileNumber) {
-        for (const { firstgid, source } of this.tilesets.slice().reverse()) {
+        for (const { firstgid, source } of this.map.tilesets.slice().reverse()) {
             if (tileNumber >= firstgid) {
                 let tileset = this.loadedTilesets[source];
                 return [tileset, tileNumber - firstgid]
@@ -345,6 +403,13 @@ class Map {
         throw new Error("Failed to parse map");
     }
     //we are offseting the tile numbers by firstGID
+    /**
+     *
+     * @param {number} tileNumber
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {Vector2d} dest
+     * @returns
+     */
     drawTile(tileNumber, ctx, dest) {
         if (tileNumber == 0) {
             // empty tile
@@ -355,12 +420,29 @@ class Map {
     }
 
     //returns vector of tile coordinate.
+    /**
+     *
+     * @param {Vector2d} coord_v
+     * @param {Vector2d} viewportOrigin_w
+     * @returns
+     */
     viewportToTile(coord_v, viewportOrigin_w) {
         return this.worldToTile(this.viewportToWorld(coord_v, viewportOrigin_w))
     }
+    /**
+     *
+     * @param {Vector2d} coord_v
+     * @param {Vector2d} viewportOrigin_w
+     * @returns
+     */
     viewportToWorld(coord_v, viewportOrigin_w) {
         return viewportOrigin_w.add(coord_v)
     }
+    /**
+     *
+     * @param {Vector2d} pos_w
+     * @returns
+     */
     worldToTile(pos_w) {
         return pos_w.div(this.tileSize());
     }
@@ -376,12 +458,17 @@ class Map {
     //    tilesets(name) {
 
     //        this.
-    //    } 
-
+    //    }
+    /**
+     *
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {Vector2d} viewportOrigin_w
+     * @param {Vector2d} canvasSize
+     */
     draw(ctx, viewportOrigin_w, canvasSize) {
 
-        let mapSize = new Vector2d(this.width, this.height);
-        let tileSize = new Vector2d(this.tilewidth, this.tileheight);
+        let mapSize = new Vector2d(this.map.width, this.map.height);
+        let tileSize = new Vector2d(this.map.tilewidth, this.map.tileheight);
         let mapTileRect = new Rect(new Vector2d(0, 0), mapSize);
         // image to draw from
         {
@@ -390,17 +477,19 @@ class Map {
                 .add(Vector2d.fromScalar(1))
                 .floor()
                 .clamp(mapTileRect);
-            //tileCoord.mul(tileSize).sub(viewportOrigin_w) < 0 no draw 
-            //tileCoord.mul(tileSize).sub(viewportOrigin_w) > canvasSize no draw 
-            topLeftTile.eachGridPoint(bottomRightTile, (tileCoord) => {
+            //tileCoord.mul(tileSize).sub(viewportOrigin_w) < 0 no draw
+            //tileCoord.mul(tileSize).sub(viewportOrigin_w) > canvasSize no draw
+            topLeftTile.eachGridPoint(bottomRightTile, (/** @type {Vector2d} */ tileCoord) => {
 
                 // TODO JDV foreach layer?
                 // size of tile
                 const dest = tileCoord.mul(tileSize).sub(viewportOrigin_w);
                 // loop once for each layer
-                for (let i = 0; i < this.layers.length; i++) {
+                for (let i = 0; i < this.map.layers.length; i++) {
                     const tileNumber = this.tileNumber(tileCoord, i);
-                    this.drawTile(tileNumber, ctx, dest);
+                    if (tileNumber != null) {
+                        this.drawTile(tileNumber, ctx, dest);
+                    }
                 }
 
                 // /// source coordinates to pull image from
@@ -423,8 +512,8 @@ class Map {
         //         .add(Vector2d.fromScalar(1))
         //         .floor()
         //         .clamp(mapTileRect);
-        //     //tileCoord.mul(tileSize).sub(viewportOrigin_w) < 0 no draw 
-        //     //tileCoord.mul(tileSize).sub(viewportOrigin_w) > canvasSize no draw 
+        //     //tileCoord.mul(tileSize).sub(viewportOrigin_w) < 0 no draw
+        //     //tileCoord.mul(tileSize).sub(viewportOrigin_w) > canvasSize no draw
         //     topLeftTile.eachGridPoint(bottomRightTile, (tileCoord) => {
 
 
