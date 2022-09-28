@@ -34,7 +34,7 @@ import { loadImage, loadJSON } from "./utils.js";
 
 /** @typedef {"Food" | "Jewel" | "Currency" | "Weapon" | "Armour" | "Clothing"} ItemType*/
 
-/** @typedef {"Consumable" | "Small" | "Hand" | "Chest" | "Head" | "Feet"} EquipType*/
+/** @typedef {"Consumable" | "Small" | "Hand" | "Chest" | "Head" | "Legs" | "Feet"} EquipType*/
 
 /**
  * @typedef {Object} MonsterProperty

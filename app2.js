@@ -4,7 +4,11 @@ import { Vector2d } from "./vector2d.js"
 import { Rect } from "./rect.js"
 import { convertSpriteSheetTileset, convertTileset, isPlayerTile } from "./tiledLoader.js";
 import * as Tiled from "./tiledTypes.js";
+import { loadImage } from "./utils.js";
 
+/** @typedef {import("./tiledLoader.js").ItemProperty} ItemProperty */
+/** @typedef {import("./tiledLoader.js").EquipType} EquipType */
+/** @typedef {"head" | "leftHand" | "rightHand" | "torso" | "legs" | "leftFoot" | "rightFoot"} EquippableSlot */
 // import someData from "./test.json" assert { type: "json" };
 
 // Define type for itemtype
@@ -50,6 +54,7 @@ import * as Tiled from "./tiledTypes.js";
 //figure out how to load items
 //animations?
 //pick up items!!!! (draw items to map first)
+
 
 
 /**
@@ -186,12 +191,12 @@ async function loadTileset(path) {
     /** @type {Tiled.Tileset} */
     let data = await (await fetch(path)).json();
     return new TileSet(await convertTileset(data));
-  }
+}
 
-  /**
-  * @param {string} path
-  */
-  async function loadMap(path) {
+/**
+* @param {string} path
+*/
+async function loadMap(path) {
     /** @type {Tiled.Map} */
     let data = await (await fetch(path)).json();
     /** @type {{[key: string]: TileSet }} */
@@ -207,7 +212,7 @@ async function loadTileset(path) {
 
     return new Map(data, loadedTilesets);
 
-  }
+}
 
 
 // const tilesets = {
@@ -369,6 +374,7 @@ class Map {
      * @returns
      */
     getItemByTileNumber(tileNumber) {
+        
         let [tileset, number] = this.getTilesetAndNumber(tileNumber);
         let itemTile = tileset.tileset.tiles[number];
         if (itemTile.type != "Item") {
@@ -387,6 +393,11 @@ class Map {
      */
     tileSize() {
         return new Vector2d(this.map.tilewidth, this.map.tileheight);
+    }
+
+
+    size() {
+        return new Vector2d(this.map.width, this.map.height);
     }
     /**
      *
@@ -532,15 +543,24 @@ class Map {
     }
 }
 
+
+
 class Item {
+    /**
+     *
+     * @param {string} name
+     * @param {HTMLImageElement} image
+     * @param {number} tileNumber
+     * @param {ItemProperty} properties
+     */
     constructor(name, image, tileNumber, properties) {
         this.name = name;
         this.image = image;
         this.tileNumber = tileNumber;
-        this.equippedType = properties.EquippedType;
-        this.type = properties.Type;
-        this.value = properties.Value;
-        this.weight = parseInt(properties.Weight);
+        this.equippedType = properties.equipType;
+        this.type = properties.type;
+        this.value = properties.value;
+        this.weight = properties.weight;
     }
 }
 
@@ -556,12 +576,30 @@ Head
 Feet
  */
 
+/** @param {string} id */
+function getElement(id) {
+    let elem = document.getElementById(id);
+    if (!elem) {
+        throw Error(`Failed to find element with id: ${id}`);
+    }
+    return elem;
+}
+
+/** @typedef {import("./tiledLoader.js").PlayerClass} PlayerClass*/
+
 
 class Person {
+    /**
+     *
+     * @param {string} name
+     * @param {PlayerClass} pClass
+     */
     constructor(name, pClass) {
         this.name = name;
         this.class = pClass;
+        /** @type {Item[]} */
         this.inventory = [];
+        /** @type {Record<EquippableSlot, Item | null} */
         this.equipped = {
             "head": null,
             "leftHand": null,
@@ -579,6 +617,11 @@ class Person {
         this.lastStepPos = new Vector2d(0, 0);
     }
     //up is 1, right is 2, down is 3 and left is 4
+    /**
+     *
+     * @param {number} direction
+     * @param {Vector2d} pos
+     */
     move(direction, pos) {
         if (this.direction != direction || this.lastStepPos.distance(pos) > 20.0) {
             this.step = this.step == 0 ? 1 : 0;
@@ -591,20 +634,27 @@ class Person {
 class Player extends Person {
 
 }
+/**
+ * @typedef {Object} DraggedItem
+ * @property {HTMLElement} element
+ * @property {Item} item
+ * @property {string} source
+ */
+//{ element: event.target, item: i, source: "inventory" }
 
-
-
-export const run = async () => {
+const run = async () => {
     let mapCurrent = await loadMap("BasicMap.json");
     let playerImage = await loadImage("Pictures/Person.png");
     let playerSet = await loadPlayerImages("Player.json");
+    /** @type {{[key: number]: boolean}} */
     let keystate = [];
     let playerPos_w = new Vector2d(128, 128); //in world coordinates
     let timestamp = performance.now();
     let player = new Person("Bob", "Warrior")
-
+    /** @type {DraggedItem | null} */
     let draggedItem = null;
 
+    /** @type {{[key: string]: EquippableSlot}} */
     let equipSlots = {
         personHead: "head",
         personLeftHand: "leftHand",
@@ -622,6 +672,14 @@ Chest
 Head
 Feet
  */
+
+    
+
+    /**
+     *
+     * @param {EquipType} equipType
+     * @returns {EquippableSlot[]}
+     */
     function equipableSlots(equipType) {
         switch (equipType) {
             case "Hand":
@@ -636,22 +694,42 @@ Feet
                 return [];
         }
     }
-
+    /**
+     *
+     * @param {EquipType} equipType
+     * @param {EquippableSlot} slot
+     * @returns
+     */
     function equipableInSlot(equipType, slot) {
         return equipableSlots(equipType).includes(slot);
     }
 
     function updateInventory() {
         const inventoryBox = document.getElementById('inventoryBox');
-        while (inventoryBox.firstChild) {
+        if (!inventoryBox) {
+            return;
+        }
+        while (inventoryBox.lastChild) {
             inventoryBox.removeChild(inventoryBox.lastChild);
         }
         player.inventory.forEach(i => {
             let x = i.image.cloneNode(false);
-            x.dataset.tileNumber = i.tileNumber;
+            if (!(x instanceof HTMLElement)) {
+                console.log("Not an element: ", x);
+                return;
+            }
+            // x.dataset = {
+            //     "tileNumber":i.tileNumber,
+            //     "name":i.name                
+            // };
+            x.dataset.tileNumber = "" + i.tileNumber;
             x.dataset.name = i.name;
             x.draggable = true;
             x.addEventListener("dragstart", (event) => {
+                if (!(event.target instanceof HTMLElement)) {
+                    console.log("empty target", event);
+                    return;
+                }
                 draggedItem = { element: event.target, item: i, source: "inventory" };
                 // This is called for inventory items only
                 // event.preventDefault()
@@ -661,17 +739,32 @@ Feet
 
         for (let slot in equipSlots) {
             const elem = document.getElementById(slot);
+            if (!elem) {
+                return;
+            }
             // There is a loop here, but it should only be one
-            while (elem.firstChild) {
+            while (elem.lastChild) {
                 elem.removeChild(elem.lastChild);
             }
             let i = player.equipped[equipSlots[slot]];
             if (i) {
                 let x = i.image.cloneNode(false);
-                x.dataset.tileNumber = i.tileNumber;
+                if (!(x instanceof HTMLElement)) {
+                    console.log("Not an element: ", x);
+                    return;
+                }
+                x.dataset.tileNumber = "" + i.tileNumber;
                 x.dataset.name = i.name;
                 x.draggable = true;
                 x.addEventListener("dragstart", (event) => {
+                    if (!(event.target instanceof HTMLElement)) {
+                        console.log("empty target", event);
+                        return;
+                    }
+                    if (!i) {
+                        console.log("Empty Item", player.equipped, equipSlots[slot]);
+                        return;
+                    }
                     draggedItem = { element: event.target, item: i, source: "inventory" };
                     // This is called for inventory items only
                     // event.preventDefault()
@@ -680,24 +773,28 @@ Feet
             }
         }
     }
+    let canvas = document.getElementById('canvas');
+    if (!(canvas instanceof HTMLCanvasElement)) {
+        return;
+    }
 
-    const inventoryBox = document.getElementById('inventoryBox');
+    const inventoryBox = getElement('inventoryBox');
     inventoryBox.addEventListener("dragover", (event) => {
-        if (inventoryBox != event.target || draggedItem.source == "inventory") { return; }
+        if (inventoryBox != event.target || !draggedItem || draggedItem.source == "inventory") { return; }
         event.preventDefault();
     })
     inventoryBox.addEventListener("dragenter", (event) => {
-        if (inventoryBox != event.target || draggedItem.source == "inventory") { return; }
+        if (inventoryBox != event.target || !draggedItem || draggedItem.source == "inventory") { return; }
         inventoryBox.classList.add("dragHover");
         event.preventDefault();
     })
     inventoryBox.addEventListener("dragleave", (event) => {
-        if (inventoryBox != event.target || draggedItem.source == "inventory") { return; }
+        if (inventoryBox != event.target || !draggedItem || draggedItem.source == "inventory") { return; }
         inventoryBox.classList.remove("dragHover");
         event.preventDefault();
     })
     inventoryBox.addEventListener("drop", (event) => {
-        if (inventoryBox != event.target || draggedItem.source == "inventory") { return; }
+        if (inventoryBox != event.target || !draggedItem || draggedItem.source == "inventory") { return; }
 
         let equippedItem = player.equipped[equipSlots[draggedItem.source]];
         if (equippedItem) {
@@ -711,11 +808,11 @@ Feet
 
 
 
-    updateCanvasSize(document, document.getElementById('canvas'));
+    updateCanvasSize(document, canvas);
     document.addEventListener("keydown", (event) => {
         keystate[event.keyCode] = true;
         if (event.key == "i") {
-            const inventoryUI = document.getElementById('box');
+            const inventoryUI = getElement('box');
             if (inventoryUI.style.visibility != "hidden") {
                 inventoryUI.style.visibility = "hidden"
             } else {
@@ -738,17 +835,32 @@ Feet
         keystate[event.keyCode] = false;
     });
     window.addEventListener('resize', () => {
-        updateCanvasSize(document, document.getElementById('canvas'));
+        if (!(canvas instanceof HTMLCanvasElement)) {
+            console.log("Canvas is null... there is no hope");
+            return;
+        }
+        updateCanvasSize(document, canvas);
     }, false);
     window.requestAnimationFrame(draw);
 
 
-
+    /**
+     *
+     * @param {string} id
+     */
     function addDropListener(id) {
-        const elem = document.getElementById(id);
+        const elem = getElement(id);
         elem.addEventListener("dragstart", (event) => {
-
-            draggedItem = { element: event.target, item: player.equipped[equipSlots[id]], source: id }
+            if (!(event.target instanceof HTMLElement)) {
+                console.log("Target not an element: ", event);
+                return;
+            }
+            let item = player.equipped[equipSlots[id]];
+            if (!item) {
+                console.log("item is null", player.equipped, equipSlots, id)
+                return;
+            }
+            draggedItem = { element: event.target, item: item, source: id }
             //delete player.equipped[equipSlots[id]];
             // This is called for equip slots only
             // event.preventDefault();
@@ -758,21 +870,33 @@ Feet
         })
         elem.addEventListener("dragenter", (event) => {
             event.preventDefault();
-            let item = mapCurrent.getItemByTileNumber(draggedItem.element.dataset.tileNumber);
+            // let item = mapCurrent.getItemByTileNumber(draggedItem.element.dataset.tileNumber);
+            if (!draggedItem || !(event.target instanceof HTMLElement)) {
+                return;
+            }
+            let item = draggedItem.item;
             if (id in equipSlots && !player.equipped[equipSlots[id]] && event.target.id == id && equipableInSlot(item.equippedType, equipSlots[id])) {
                 event.target.classList.add("dragHover");
             }
         })
         elem.addEventListener("dragleave", (event) => {
             event.preventDefault();
-            let item = mapCurrent.getItemByTileNumber(draggedItem.element.dataset.tileNumber);
+            if (!draggedItem || !(event.target instanceof HTMLElement)) {
+                return;
+            }
+            // let item = mapCurrent.getItemByTileNumber(draggedItem.element.dataset.tileNumber);
+            let item = draggedItem.item;
             if (id in equipSlots && !player.equipped[equipSlots[id]] && event.target.id == id && equipableInSlot(item.equippedType, equipSlots[id])) {
                 event.target.classList.remove("dragHover");
             }
         })
         elem.addEventListener("drop", (event) => {
             event.preventDefault();
-            let item = mapCurrent.getItemByTileNumber(draggedItem.element.dataset.tileNumber);
+            if (!draggedItem || !(event.target instanceof HTMLElement)) {
+                return;
+            }
+            // let item = mapCurrent.getItemByTileNumber(draggedItem.element.dataset.tileNumber);
+            let item = draggedItem.item;
             if (id in equipSlots && !player.equipped[equipSlots[id]] && event.target.id == id && equipableInSlot(item.equippedType, equipSlots[id])) {
                 // draggedItem.parentNode.removeChild( draggedItem );
 
@@ -798,6 +922,7 @@ Feet
         })
     }
 
+
     for (let slot in equipSlots) {
         addDropListener(slot);
     }
@@ -811,15 +936,25 @@ Feet
     //TODO only draw map in viewportOrigin_w
     //add mountains
     //get a better person/add animation as well.
+    /**
+     *
+     * @param {number} now
+     */
     function draw(now) {
 
         let dt = (now - timestamp) / 1000;
         timestamp = now;
         let canvas = document.getElementById('canvas');
+        if (!(canvas instanceof HTMLCanvasElement)) {
+            return;
+        }
         let ctx = canvas.getContext('2d');
-        let tileSize = new Vector2d(mapCurrent.tilewidth, mapCurrent.tileheight);
+        if (!ctx) {
+            return null;
+        }
+        let tileSize = mapCurrent.tileSize();
 
-        let mapSize = new Vector2d(mapCurrent.width, mapCurrent.height).mul(tileSize);
+        let mapSize = mapCurrent.size().mul(tileSize);
         let canvasSize = new Vector2d(canvas.width, canvas.height);
         let mapRect = new Rect(new Vector2d(0, 0), mapSize.sub(canvasSize));
 
@@ -875,7 +1010,11 @@ Feet
         window.requestAnimationFrame(draw);
     }
 
-
+    /**
+     *
+     * @param {Document} doc
+     * @param {HTMLCanvasElement} canvas
+     */
     function updateCanvasSize(doc, canvas) {
         canvas.width = doc.body.clientWidth;
         canvas.height = doc.body.clientHeight;
