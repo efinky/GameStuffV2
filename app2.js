@@ -642,7 +642,7 @@ class Player extends Person {
  */
 //{ element: event.target, item: i, source: "inventory" }
 
-const run = async () => {
+export async function run() {
     let mapCurrent = await loadMap("BasicMap.json");
     let playerImage = await loadImage("Pictures/Person.png");
     let playerSet = await loadPlayerImages("Player.json");

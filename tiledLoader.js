@@ -32,7 +32,7 @@ import { loadImage, loadJSON } from "./utils.js";
 
 /** @typedef {"Wizard" | "Sorcerer" | "Pirate" | "Warrior"} PlayerClass */
 
-/** @typedef {"Food" | "Jewel" | "Currency" | "Weapon" | "Armour" | "Clothing"} ItemType*/
+/** @typedef {"Food" | "Drink" | "Jewel" | "Currency" | "Weapon" | "Armour" | "Clothing"} ItemType*/
 
 /** @typedef {"Consumable" | "Small" | "Hand" | "Chest" | "Head" | "Legs" | "Feet"} EquipType*/
 
@@ -303,11 +303,12 @@ async function convertSpriteSheetTile(tile) {
 
 /**
  * @param {any} value
- * @return {value is EquipType}
+ * @return {value is ItemType}
  */
-function isEquipType(value) {
+function isItemType(value) {
   if (
     value === "Food" ||
+    value === "Drink" ||
     value === "Jewel" ||
     value === "Currency" ||
     value === "Weapon" ||
@@ -323,9 +324,9 @@ function isEquipType(value) {
 /**
  *
  * @param {*} value
- * @return {value is ItemType}
+ * @return {value is EquipType}
  */
-function isItemType(value) {
+function isEquipType(value) {
   if (
     value === "Consumable" ||
     value === "Small" ||
@@ -345,7 +346,7 @@ function isItemType(value) {
  * @return { Promise<ImageTile> }
  */
 async function convertImageTile(tile) {
-  if (tile.type === "Item") {
+  if (tile.type === "Items") {
     if (tile.imageheight === undefined || tile.imagewidth === undefined) {
       throw Error(
         "Item tile was missing `imageheight` or `imagewidth` property"
@@ -361,11 +362,12 @@ async function convertImageTile(tile) {
       (p) => p.name === "EquippedType"
     )?.value;
     let name = tile.properties.find((p) => p.name === "Name")?.value;
-    let value = tile.properties.find((p) => p.name === "Value")?.value;
-    let weight = tile.properties.find((p) => p.name === "Weight")?.value;
+    let value = parseInt(tile.properties.find((p) => p.name === "Value")?.value);
+    let weight = parseInt(tile.properties.find((p) => p.name === "Weight")?.value);
     let type = tile.properties.find((p) => p.name === "Type")?.value;
 
     if (typeof weight !== "number") {
+      console.log(tile)
       throw Error("Item tile was missing `weight` property");
     }
     if (typeof value !== "number") {
@@ -377,11 +379,11 @@ async function convertImageTile(tile) {
 
     if (!isEquipType(equipType)) {
       throw Error(
-        "Item tile's `equipType` property wasn't a valid `EquipType`"
+        `Item tile's 'equipType' property (${equipType}) wasn't a valid 'EquipType'`
       );
     }
     if (!isItemType(type)) {
-      throw Error("Item tile's `itemType` property wasn't a valid `ItemType`");
+      throw Error(`Item tile's 'itemType' property (${type}) wasn't a valid 'ItemType'`);
     }
 
     return {
@@ -399,7 +401,7 @@ async function convertImageTile(tile) {
       },
     };
   }
-  throw Error("Unknown tile type");
+  throw Error(`Unknown tile type ${tile.type}`);
 }
 
 /**

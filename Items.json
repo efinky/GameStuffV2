@@ -299,12 +299,12 @@
                 }, 
                 {
                  "name":"Value",
-                 "type":"string",
+                 "type":"int",
                  "value":"10"
                 }, 
                 {
                  "name":"Weight",
-                 "type":"string",
+                 "type":"int",
                  "value":"10"
                 }],
          "type":"Items"
@@ -332,12 +332,12 @@
                 }, 
                 {
                  "name":"Value",
-                 "type":"string",
+                 "type":"int",
                  "value":"10"
                 }, 
                 {
                  "name":"Weight",
-                 "type":"string",
+                 "type":"int",
                  "value":"10"
                 }],
          "type":"Items"
@@ -1124,12 +1124,12 @@
                 }, 
                 {
                  "name":"Value",
-                 "type":"string",
+                 "type":"int",
                  "value":"10"
                 }, 
                 {
                  "name":"Weight",
-                 "type":"string",
+                 "type":"int",
                  "value":"10"
                 }],
          "type":"Items"
@@ -1157,12 +1157,12 @@
                 }, 
                 {
                  "name":"Value",
-                 "type":"string",
+                 "type":"int",
                  "value":"10"
                 }, 
                 {
                  "name":"Weight",
-                 "type":"string",
+                 "type":"int",
                  "value":"10"
                 }],
          "type":"Items"
@@ -1190,12 +1190,12 @@
                 }, 
                 {
                  "name":"Value",
-                 "type":"string",
+                 "type":"int",
                  "value":"10"
                 }, 
                 {
                  "name":"Weight",
-                 "type":"string",
+                 "type":"int",
                  "value":"10"
                 }],
          "type":"Items"
@@ -1223,12 +1223,12 @@
                 }, 
                 {
                  "name":"Value",
-                 "type":"string",
+                 "type":"int",
                  "value":"10"
                 }, 
                 {
                  "name":"Weight",
-                 "type":"string",
+                 "type":"int",
                  "value":"10"
                 }],
          "type":"Items"
@@ -1256,12 +1256,12 @@
                 }, 
                 {
                  "name":"Value",
-                 "type":"string",
+                 "type":"int",
                  "value":"10"
                 }, 
                 {
                  "name":"Weight",
-                 "type":"string",
+                 "type":"int",
                  "value":"10"
                 }],
          "type":"Items"
