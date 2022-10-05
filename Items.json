@@ -300,12 +300,12 @@
                 {
                  "name":"Value",
                  "type":"int",
-                 "value":"10"
+                 "value":10
                 }, 
                 {
                  "name":"Weight",
                  "type":"int",
-                 "value":"10"
+                 "value":5
                 }],
          "type":"Items"
         }, 
@@ -333,12 +333,12 @@
                 {
                  "name":"Value",
                  "type":"int",
-                 "value":"10"
+                 "value":20
                 }, 
                 {
                  "name":"Weight",
                  "type":"int",
-                 "value":"10"
+                 "value":7
                 }],
          "type":"Items"
         }, 
@@ -1115,7 +1115,7 @@
                 {
                  "name":"Name",
                  "type":"string",
-                 "value":"Double Axe"
+                 "value":"Axe"
                 }, 
                 {
                  "name":"Type",
@@ -1125,12 +1125,12 @@
                 {
                  "name":"Value",
                  "type":"int",
-                 "value":"10"
+                 "value":10
                 }, 
                 {
                  "name":"Weight",
                  "type":"int",
-                 "value":"10"
+                 "value":15
                 }],
          "type":"Items"
         }, 
@@ -1148,7 +1148,7 @@
                 {
                  "name":"Name",
                  "type":"string",
-                 "value":"Axe"
+                 "value":"Big Axe"
                 }, 
                 {
                  "name":"Type",
@@ -1158,12 +1158,12 @@
                 {
                  "name":"Value",
                  "type":"int",
-                 "value":"10"
+                 "value":15
                 }, 
                 {
                  "name":"Weight",
                  "type":"int",
-                 "value":"10"
+                 "value":20
                 }],
          "type":"Items"
         }, 
@@ -1191,12 +1191,12 @@
                 {
                  "name":"Value",
                  "type":"int",
-                 "value":"10"
+                 "value":9
                 }, 
                 {
                  "name":"Weight",
                  "type":"int",
-                 "value":"10"
+                 "value":7
                 }],
          "type":"Items"
         }, 
@@ -1224,12 +1224,12 @@
                 {
                  "name":"Value",
                  "type":"int",
-                 "value":"10"
+                 "value":3
                 }, 
                 {
                  "name":"Weight",
                  "type":"int",
-                 "value":"10"
+                 "value":3
                 }],
          "type":"Items"
         }, 
@@ -1257,12 +1257,12 @@
                 {
                  "name":"Value",
                  "type":"int",
-                 "value":"10"
+                 "value":30
                 }, 
                 {
                  "name":"Weight",
                  "type":"int",
-                 "value":"10"
+                 "value":4
                 }],
          "type":"Items"
         }],

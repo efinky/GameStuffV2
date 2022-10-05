@@ -11,52 +11,23 @@ import { loadImage } from "./utils.js";
 /** @typedef {"head" | "leftHand" | "rightHand" | "torso" | "legs" | "leftFoot" | "rightFoot"} EquippableSlot */
 // import someData from "./test.json" assert { type: "json" };
 
-// Define type for itemtype
-//03/28/22
-//fix inventory (move items from inventory to wearing)
-//make inventory display prettier
+/*
+    TODO
 
-//03/18/22
-//fix it so that getItem doesn't fail it 0
+    monsters
+    fighting
+    monster AI
+    health
+    damage
+    sound effects (damage, stuff)
+    networking
+    improve iventory
+    item weight (max inventory weight)
 
-//03/01/22
-//add player animation
-//add item collection
-//fix wangsets[0] to be something nicer
-
-//02/25/22
-//add player animation
-//add item collection
-//speed/iswalkable
-
-//02/11/22
-//coordfromtilenumber - works really well for terrain (spritesheet) but how do we handle
-//items (not a sprite sheet)
-
-
-//2/02/22
-//dynamically load map as a .json
-//dynamically load image from tileset
-//dynamically load tileset
-//note - in items.json their offset is 417
-
-
-//1/7/22
-//todo:
-//add images to map - allow for image collection
-//remove fireballs
-//create ability to use tile attributes.
-//do awesome!
-//fix tileset... its offset by a few pixels.
-//01/24/22
-// Todo:
-//sprite sheet generator?
-//figure out how to load items
-//animations?
-//pick up items!!!! (draw items to map first)
-
-
-
+    click to walk
+    drag to eat option
+    inventory vs equip box?
+*/
 /**
  * @param {string} path
  */
@@ -246,8 +217,12 @@ class Map {
             return null;
         }
         let [tileset, number] = wang;
-        if (tileset.tileset.tilesetType == "spriteSheet" && tileset.tileset.wangSet !== undefined) {
-            return tileset.tileset.wangSet.colors[tileset.tileset.wangSet.wangtiles[number].wangid[i] - 1];
+        if (tileset.tileset.tilesetType == "spriteSheet" && tileset.tileset.wangSet?.wangtiles) {
+            let wangTile = tileset.tileset.wangSet.wangtiles.find((s) => s.tileid === number)
+            if (!wangTile) {
+                return null;
+            }
+            return tileset.tileset.wangSet.colors[wangTile.wangid[i] - 1]
         } else {
             return null;
         }
@@ -975,7 +950,6 @@ Feet
 
 
         let speed = mapCurrent.getTileSpeed(playerPos_w, 0);
-
         // Draw Person
         //ctx.drawImage(playerImage, ...playerPos_w.sub(viewportOrigin_w).arr());
 

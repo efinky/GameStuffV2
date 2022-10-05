@@ -211,6 +211,9 @@ export async function convertSpriteSheetTileset(tileset) {
        }
        let tiles = await Promise.all(tileset.tiles.map(convertSpriteSheetTile));
 
+       console.log("Wangset", tileset.wangsets);
+       let wangset = tileset?.wangsets?.find((s) => s.name === "TerrainSet");
+
        return {
               tilesetType: "spriteSheet",
               columns: tileset.columns,
@@ -220,7 +223,7 @@ export async function convertSpriteSheetTileset(tileset) {
               tileHeight: tileset.tileheight,
               tileWidth: tileset.tilewidth,
               tiles: tiles,
-              wangSet: undefined,
+              wangSet: (wangset) ? convertWangSets(wangset) : undefined ,
        };
 }
 
@@ -362,8 +365,8 @@ async function convertImageTile(tile) {
       (p) => p.name === "EquippedType"
     )?.value;
     let name = tile.properties.find((p) => p.name === "Name")?.value;
-    let value = parseInt(tile.properties.find((p) => p.name === "Value")?.value);
-    let weight = parseInt(tile.properties.find((p) => p.name === "Weight")?.value);
+    let value = tile.properties.find((p) => p.name === "Value")?.value;
+    let weight = tile.properties.find((p) => p.name === "Weight")?.value;
     let type = tile.properties.find((p) => p.name === "Type")?.value;
 
     if (typeof weight !== "number") {
