@@ -12,19 +12,38 @@ import { loadImage } from "./utils.js";
 // import someData from "./test.json" assert { type: "json" };
 
 /*
+    DONE
+    click to walk
+
+    
+    NEXT UP
+    Monsters
+    Monster AI
+    
     TODO
 
-    monsters
+
+    touchscreen vs pc?
+        create a button for long range attack
+        melle is just walk into stuff?
+
+        create a button for inventory (as well as keyboard key)
+
+
+    [monsters
     fighting
     monster AI
     health
-    damage
+    damage]
+
     sound effects (damage, stuff)
-    networking
+
     improve iventory
     item weight (max inventory weight)
+    
+    [state storage
+    networking]
 
-    click to walk
     drag to eat option
     inventory vs equip box?
 */
@@ -349,7 +368,7 @@ class Map {
      * @returns
      */
     getItemByTileNumber(tileNumber) {
-        
+
         let [tileset, number] = this.getTilesetAndNumber(tileNumber);
         let itemTile = tileset.tileset.tiles[number];
         if (itemTile.type != "Item") {
@@ -574,7 +593,7 @@ class Person {
         this.class = pClass;
         /** @type {Item[]} */
         this.inventory = [];
-        /** @type {Record<EquippableSlot, Item | null} */
+        /** @type {Record<EquippableSlot, Item | null>} */
         this.equipped = {
             "head": null,
             "leftHand": null,
@@ -609,6 +628,20 @@ class Person {
 class Player extends Person {
 
 }
+
+/** @param {MouseEvent} mouseEvent */
+function getCanvasMousePos(mouseEvent) {
+    if (!mouseEvent.target || !(mouseEvent.target instanceof HTMLCanvasElement)) {
+        return null;
+    }
+
+    const rect = mouseEvent.target.getBoundingClientRect();
+    return new Vector2d(
+        mouseEvent.clientX - rect.left,
+        mouseEvent.clientY - rect.top
+    );
+}
+
 /**
  * @typedef {Object} DraggedItem
  * @property {HTMLElement} element
@@ -628,6 +661,8 @@ export async function run() {
     let player = new Person("Bob", "Warrior")
     /** @type {DraggedItem | null} */
     let draggedItem = null;
+    /** @type {Vector2d | null} */
+    let moveTarget = null;
 
     /** @type {{[key: string]: EquippableSlot}} */
     let equipSlots = {
@@ -648,7 +683,7 @@ Head
 Feet
  */
 
-    
+
 
     /**
      *
@@ -809,6 +844,40 @@ Feet
     document.addEventListener("keyup", (event) => {
         keystate[event.keyCode] = false;
     });
+    canvas.addEventListener("mousedown", (event) => {
+
+        if (event.button == 0) {
+
+            const cPos = getCanvasMousePos(event);
+            if (!cPos) {
+                return;
+            }
+            moveTarget = cPos;
+            event.stopPropagation();
+            console.log(moveTarget);
+        }
+    })
+    canvas.addEventListener("mouseup", (event) => {
+
+        if (event.button == 0) {
+
+            moveTarget = null;
+
+            console.log(moveTarget);
+        }
+    })
+    canvas.addEventListener("mousemove", (event) => {
+        if (moveTarget != null) {
+            const cPos = getCanvasMousePos(event);
+            if (!cPos) {
+                return;
+            }
+            moveTarget = cPos;
+            event.stopPropagation();
+            console.log(moveTarget);
+        }
+    })
+
     window.addEventListener('resize', () => {
         if (!(canvas instanceof HTMLCanvasElement)) {
             console.log("Canvas is null... there is no hope");
@@ -974,6 +1043,17 @@ Feet
         if (keystate[40]) {
             myVelocity = myVelocity.add(new Vector2d(0, 1))
             player.move(3, playerPos_w)
+        }
+
+        if (moveTarget) {
+            let wTarget = mapCurrent.viewportToWorld(moveTarget, viewportOrigin_w);
+            myVelocity = wTarget.sub(playerPos_w).normalize();
+            let moveAnimation = myVelocity.lookupByDir([
+                { key: new Vector2d(-1, 0), value: 4 },
+                { key: new Vector2d(1, 0), value: 2 },
+                { key: new Vector2d(0, -1), value: 1 },
+                { key: new Vector2d(0, 1), value: 3 }]);
+            player.move(moveAnimation, playerPos_w);
         }
 
         let newplayerPos_w = playerPos_w.add(myVelocity.scale(mySpeed * dt * 32));
