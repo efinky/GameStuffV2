@@ -30,7 +30,7 @@ import { loadImage, loadJSON } from "./utils.js";
  * @property {WangSet | undefined} wangSet
  */
 
-/** @typedef {"Wizard" | "Sorcerer" | "Pirate" | "Warrior"} PlayerClass */
+/** @typedef {"Wizard" | "Sorcerer" | "Pirate" | "Warrior" | "Goblin" | "Test" | "Dragonet"} PlayerClass */
 
 /** @typedef {"Food" | "Drink" | "Jewel" | "Currency" | "Weapon" | "Armour" | "Clothing"} ItemType*/
 
@@ -38,7 +38,9 @@ import { loadImage, loadJSON } from "./utils.js";
 
 /**
  * @typedef {Object} MonsterProperty
- * @property {string} image
+ * @property {number} AnimationFrame
+ * @property {number} Step
+ * @property {string} Class
  */
 
 /**
@@ -74,8 +76,8 @@ import { loadImage, loadJSON } from "./utils.js";
  * @param {Tile} value
  * @return {value is PlayerTile}
  */
-export function isPlayerTile(value) {
-       if (value.type === "Player") {
+export function isCharacterTile(value) {
+       if (value.type === "Player" || value.type == "Monster") {
               return true;
        } else {
               return false;
@@ -236,8 +238,11 @@ function isPlayerClass(value) {
     value === "Wizard" ||
     value === "Sorcerer" ||
     value === "Pirate" ||
-    value === "Warrior"
-  ) {
+    value === "Warrior"||
+    value === "Goblin" ||
+    value === "Test" ||
+    value === "Dragonet"
+  ) { 
     return true;
   } else {
     return false;
@@ -249,8 +254,9 @@ function isPlayerClass(value) {
  * @return { Promise<Tile> }
  */
 async function convertSpriteSheetTile(tile) {
-  if (tile.type === "Player") {
+  if (tile.type === "Player" || tile.type === "Monster") {
     if (tile.properties === undefined) {
+      console.log(tile);
       throw Error("Item tile was missing `properties` property");
     }
     let playerClass = tile.properties.find((p) => p.name === "Class")?.value;
@@ -280,14 +286,13 @@ async function convertSpriteSheetTile(tile) {
         AnimationFrame: frame,
       },
     };
-    // } else if (tile.type === "Monster") {
   } else if (tile.type === "Terrain") {
     return {
       type: tile.type,
       id: tile.id,
     };
   } else {
-    throw Error("Unknown tile type");
+    throw Error(`Unknown tile type: ${tile.type}`);
   }
 }
 

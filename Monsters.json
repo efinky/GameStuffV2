@@ -1,4 +1,12 @@
 { "columns":6,
+ "editorsettings":
+    {
+     "export":
+        {
+         "format":"json",
+         "target":"Monsters.json"
+        }
+    },
  "image":"Pictures\/spriteSheets\/monstersheet.png",
  "imageheight":128,
  "imagewidth":192,
@@ -11,45 +19,181 @@
  "tiles":[
         {
          "id":0,
+         "properties":[
+                {
+                 "name":"AnimationFrame",
+                 "type":"int",
+                 "value":1
+                }, 
+                {
+                 "name":"Class",
+                 "type":"string",
+                 "value":"Test"
+                }, 
+                {
+                 "name":"Step",
+                 "type":"int",
+                 "value":1
+                }],
          "type":"Monster"
         }, 
         {
          "id":1,
+         "properties":[
+                {
+                 "name":"AnimationFrame",
+                 "type":"int",
+                 "value":1
+                }, 
+                {
+                 "name":"Class",
+                 "type":"string",
+                 "value":"Test"
+                }, 
+                {
+                 "name":"Step",
+                 "type":"int",
+                 "value":1
+                }],
          "type":"Monster"
         }, 
         {
          "id":2,
+         "properties":[
+                {
+                 "name":"AnimationFrame",
+                 "type":"int",
+                 "value":1
+                }, 
+                {
+                 "name":"Class",
+                 "type":"string",
+                 "value":"Test"
+                }, 
+                {
+                 "name":"Step",
+                 "type":"int",
+                 "value":1
+                }],
          "type":"Monster"
         }, 
         {
          "id":3,
+         "properties":[
+                {
+                 "name":"AnimationFrame",
+                 "type":"int",
+                 "value":1
+                }, 
+                {
+                 "name":"Class",
+                 "type":"string",
+                 "value":"Test"
+                }, 
+                {
+                 "name":"Step",
+                 "type":"int",
+                 "value":1
+                }],
+         "type":"Monster"
+        }, 
+        {
+         "id":4,
+         "properties":[
+                {
+                 "name":"AnimationFrame",
+                 "type":"int",
+                 "value":1
+                }, 
+                {
+                 "name":"Class",
+                 "type":"string",
+                 "value":"Test"
+                }, 
+                {
+                 "name":"Step",
+                 "type":"int",
+                 "value":1
+                }],
+         "type":"Monster"
+        }, 
+        {
+         "id":5,
+         "properties":[
+                {
+                 "name":"AnimationFrame",
+                 "type":"int",
+                 "value":1
+                }, 
+                {
+                 "name":"Class",
+                 "type":"string",
+                 "value":"Test"
+                }, 
+                {
+                 "name":"Step",
+                 "type":"int",
+                 "value":1
+                }],
          "type":"Monster"
         }, 
         {
          "id":6,
+         "properties":[
+                {
+                 "name":"AnimationFrame",
+                 "type":"int",
+                 "value":1
+                }, 
+                {
+                 "name":"Class",
+                 "type":"string",
+                 "value":"Test"
+                }, 
+                {
+                 "name":"Step",
+                 "type":"int",
+                 "value":1
+                }],
          "type":"Monster"
         }, 
         {
          "id":7,
+         "properties":[
+                {
+                 "name":"AnimationFrame",
+                 "type":"int",
+                 "value":1
+                }, 
+                {
+                 "name":"Class",
+                 "type":"string",
+                 "value":"Test"
+                }, 
+                {
+                 "name":"Step",
+                 "type":"int",
+                 "value":1
+                }],
          "type":"Monster"
         }, 
         {
          "id":8,
          "properties":[
                 {
-                 "name":"Animation",
+                 "name":"AnimationFrame",
                  "type":"int",
                  "value":1
+                }, 
+                {
+                 "name":"Class",
+                 "type":"string",
+                 "value":"Goblin"
                 }, 
                 {
                  "name":"Step",
                  "type":"int",
                  "value":1
-                }, 
-                {
-                 "name":"Type",
-                 "type":"string",
-                 "value":"Goblin"
                 }],
          "type":"Monster"
         }, 
@@ -57,19 +201,59 @@
          "id":9,
          "properties":[
                 {
-                 "name":"Animation",
+                 "name":"AnimationFrame",
                  "type":"int",
                  "value":1
                 }, 
                 {
-                 "name":"Step",
-                 "type":"int",
-                 "value":0
-                }, 
-                {
-                 "name":"Type",
+                 "name":"Class",
                  "type":"string",
                  "value":"Goblin"
+                }, 
+                {
+                 "name":"Step",
+                 "type":"int",
+                 "value":2
+                }],
+         "type":"Monster"
+        }, 
+        {
+         "id":10,
+         "properties":[
+                {
+                 "name":"AnimationFrame",
+                 "type":"int",
+                 "value":1
+                }, 
+                {
+                 "name":"Class",
+                 "type":"string",
+                 "value":"Test"
+                }, 
+                {
+                 "name":"Step",
+                 "type":"int",
+                 "value":1
+                }],
+         "type":"Monster"
+        }, 
+        {
+         "id":11,
+         "properties":[
+                {
+                 "name":"AnimationFrame",
+                 "type":"int",
+                 "value":1
+                }, 
+                {
+                 "name":"Class",
+                 "type":"string",
+                 "value":"Test"
+                }, 
+                {
+                 "name":"Step",
+                 "type":"int",
+                 "value":1
                 }],
          "type":"Monster"
         }, 
@@ -77,19 +261,19 @@
          "id":12,
          "properties":[
                 {
-                 "name":"Animation",
+                 "name":"AnimationFrame",
                  "type":"int",
                  "value":2
+                }, 
+                {
+                 "name":"Class",
+                 "type":"string",
+                 "value":"Goblin"
                 }, 
                 {
                  "name":"Step",
                  "type":"int",
                  "value":1
-                }, 
-                {
-                 "name":"Type",
-                 "type":"string",
-                 "value":"Goblin"
                 }],
          "type":"Monster"
         }, 
@@ -97,19 +281,19 @@
          "id":13,
          "properties":[
                 {
-                 "name":"Animation",
+                 "name":"AnimationFrame",
                  "type":"int",
                  "value":2
+                }, 
+                {
+                 "name":"Class",
+                 "type":"string",
+                 "value":"Goblin"
                 }, 
                 {
                  "name":"Step",
                  "type":"int",
                  "value":0
-                }, 
-                {
-                 "name":"Type",
-                 "type":"string",
-                 "value":"Goblin"
                 }],
          "type":"Monster"
         }, 
@@ -117,19 +301,19 @@
          "id":14,
          "properties":[
                 {
-                 "name":"Animation",
+                 "name":"AnimationFrame",
                  "type":"int",
                  "value":3
+                }, 
+                {
+                 "name":"Class",
+                 "type":"string",
+                 "value":"Goblin"
                 }, 
                 {
                  "name":"Step",
                  "type":"int",
                  "value":1
-                }, 
-                {
-                 "name":"Type",
-                 "type":"string",
-                 "value":"Goblin"
                 }],
          "type":"Monster"
         }, 
@@ -137,19 +321,59 @@
          "id":15,
          "properties":[
                 {
-                 "name":"Animation",
+                 "name":"AnimationFrame",
                  "type":"int",
                  "value":3
+                }, 
+                {
+                 "name":"Class",
+                 "type":"string",
+                 "value":"Goblin"
                 }, 
                 {
                  "name":"Step",
                  "type":"int",
                  "value":0
+                }],
+         "type":"Monster"
+        }, 
+        {
+         "id":16,
+         "properties":[
+                {
+                 "name":"AnimationFrame",
+                 "type":"int",
+                 "value":1
                 }, 
                 {
-                 "name":"Type",
+                 "name":"Class",
                  "type":"string",
-                 "value":"Goblin"
+                 "value":"Test"
+                }, 
+                {
+                 "name":"Step",
+                 "type":"int",
+                 "value":1
+                }],
+         "type":"Monster"
+        }, 
+        {
+         "id":17,
+         "properties":[
+                {
+                 "name":"AnimationFrame",
+                 "type":"int",
+                 "value":1
+                }, 
+                {
+                 "name":"Class",
+                 "type":"string",
+                 "value":"Test"
+                }, 
+                {
+                 "name":"Step",
+                 "type":"int",
+                 "value":1
                 }],
          "type":"Monster"
         }, 
@@ -157,19 +381,19 @@
          "id":18,
          "properties":[
                 {
-                 "name":"Animation",
+                 "name":"AnimationFrame",
                  "type":"int",
                  "value":4
+                }, 
+                {
+                 "name":"Class",
+                 "type":"string",
+                 "value":"Goblin"
                 }, 
                 {
                  "name":"Step",
                  "type":"int",
                  "value":1
-                }, 
-                {
-                 "name":"Type",
-                 "type":"string",
-                 "value":"Goblin"
                 }],
          "type":"Monster"
         }, 
@@ -177,28 +401,60 @@
          "id":19,
          "properties":[
                 {
-                 "name":"Animation",
+                 "name":"AnimationFrame",
                  "type":"int",
                  "value":4
+                }, 
+                {
+                 "name":"Class",
+                 "type":"string",
+                 "value":"Goblin"
                 }, 
                 {
                  "name":"Step",
                  "type":"int",
                  "value":0
-                }, 
-                {
-                 "name":"Type",
-                 "type":"string",
-                 "value":"Goblin"
                 }],
          "type":"Monster"
         }, 
         {
          "id":20,
+         "properties":[
+                {
+                 "name":"AnimationFrame",
+                 "type":"int",
+                 "value":1
+                }, 
+                {
+                 "name":"Class",
+                 "type":"string",
+                 "value":"Test"
+                }, 
+                {
+                 "name":"Step",
+                 "type":"int",
+                 "value":1
+                }],
          "type":"Monster"
         }, 
         {
          "id":21,
+         "properties":[
+                {
+                 "name":"AnimationFrame",
+                 "type":"int",
+                 "value":1
+                }, 
+                {
+                 "name":"Class",
+                 "type":"string",
+                 "value":"Test"
+                }, 
+                {
+                 "name":"Step",
+                 "type":"int",
+                 "value":1
+                }],
          "type":"Monster"
         }],
  "tilewidth":32,

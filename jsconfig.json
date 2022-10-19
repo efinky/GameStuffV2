@@ -10,9 +10,9 @@
                 "sourceMap": true,
                 "checkJs": true,
                 "strict": true,
-                "baseUrl": "./",
+                "baseUrl": "./"
         },
         "include": [
                 ".//**/*"
-        ],
+        ]
 }
