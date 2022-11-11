@@ -3,14 +3,16 @@
 import { Vector2d } from "./vector2d.js"
 import { Rect } from "./rect.js"
 import { Map } from "./map.js";
-import { PlayerSet } from "./playerSet.js";
+import { PlayerSet as CharacterSet } from "./playerSet.js";
 import { Item } from "./item.js";
 import { Player } from "./player.js"
 import { Monster } from "./monster.js"
+import { Inventory } from "./inventory.js"
+import { WorldState } from "./worldState.js"
 
 /** @typedef {import("./tiledLoader.js").ItemProperty} ItemProperty */
 /** @typedef {import("./tiledLoader.js").EquipType} EquipType */
-/** @typedef {"head" | "leftHand" | "rightHand" | "torso" | "legs" | "leftFoot" | "rightFoot"} EquippableSlot */
+/** @typedef {import("./character.js").EquippableSlot}  EquippableSlot */
 // import someData from "./test.json" assert { type: "json" };
 
 /*
@@ -103,204 +105,53 @@ function getCanvasMousePos(mouseEvent) {
     );
 }
 
-/**
- * @typedef {Object} DraggedItem
- * @property {HTMLElement} element
- * @property {Item} item
- * @property {string} source
- */
-//{ element: event.target, item: i, source: "inventory" }
+/** @param {WorldState} state */
+const PickupItem = (state) => {
+    let item = state.mapCurrent.getItem(state.player.characterPos_w);
+    if (item) {
+        state.player.inventory.push(item);
+    }
+}
+
+
+
+
+/** @type {WorldState} */
+let worldState;
+
+/** @param {(state: WorldState) => void} f */
+export function dispatch(f) {
+    f(worldState);
+}
 
 export async function run() {
     let mapCurrent = await Map.load("BasicMap.json");
-    let playerSet = await PlayerSet.load("Player.json");
-    let monsterSet = await PlayerSet.load("Monsters.json");
+    let playerSet = await CharacterSet.load("Player.json");
+    let monsterSet = await CharacterSet.load("Monsters.json");
+    worldState = new WorldState(mapCurrent, playerSet, monsterSet);
     /** @type {{[key: number]: boolean}} */
     let keystate = [];
     let timestamp = performance.now();
-    let player = new Player("Bob", "Warrior", new Vector2d(128, 128));
-    /** @type {Monster[]} */
-    let monsters = [];
-    monsters.push(new Monster("bob", "Goblin", new Vector2d(130, 130)));
-    /** @type {DraggedItem | null} */
-    let draggedItem = null;
     /** @type {Vector2d | null} */
     let moveTarget = null;
 
-    /** @type {{[key: string]: EquippableSlot}} */
-    let equipSlots = {
-        personHead: "head",
-        personLeftHand: "leftHand",
-        personRightHand: "rightHand",
-        personTorso: "torso",
-        personLegs: "legs",
-        personLeftFoot: "leftFoot",
-        personRightFoot: "rightFoot",
-    }
-    /* ItemTypes
-Consumable
-Small
-Hand
-Chest
-Head
-Feet
- */
+    let inventory = new Inventory(getElement("inventoryBox"), worldState.player);
 
-
-
-    /**
-     *
-     * @param {EquipType} equipType
-     * @returns {EquippableSlot[]}
-     */
-    function equipableSlots(equipType) {
-        switch (equipType) {
-            case "Hand":
-                return ["leftHand", "rightHand"];
-            case "Chest":
-                return ["torso"];
-            case "Legs":
-                return ["legs"];
-            case "Feet":
-                return ["leftFoot", "rightFoot"];
-            default:
-                return [];
-        }
-    }
-    /**
-     *
-     * @param {EquipType} equipType
-     * @param {EquippableSlot} slot
-     * @returns
-     */
-    function equipableInSlot(equipType, slot) {
-        return equipableSlots(equipType).includes(slot);
-    }
-
-    function updateInventory() {
-        const inventoryBox = document.getElementById('inventoryBox');
-        if (!inventoryBox) {
-            return;
-        }
-        while (inventoryBox.lastChild) {
-            inventoryBox.removeChild(inventoryBox.lastChild);
-        }
-        player.inventory.forEach(i => {
-            let x = i.image.cloneNode(false);
-            if (!(x instanceof HTMLElement)) {
-                console.log("Not an element: ", x);
-                return;
-            }
-            // x.dataset = {
-            //     "tileNumber":i.tileNumber,
-            //     "name":i.name
-            // };
-            x.dataset.tileNumber = "" + i.tileNumber;
-            x.dataset.name = i.name;
-            x.draggable = true;
-            x.addEventListener("dragstart", (event) => {
-                if (!(event.target instanceof HTMLElement)) {
-                    console.log("empty target", event);
-                    return;
-                }
-                draggedItem = { element: event.target, item: i, source: "inventory" };
-                // This is called for inventory items only
-                // event.preventDefault()
-            })
-            inventoryBox.appendChild(x);
-        });
-
-        for (let slot in equipSlots) {
-            const elem = document.getElementById(slot);
-            if (!elem) {
-                return;
-            }
-            // There is a loop here, but it should only be one
-            while (elem.lastChild) {
-                elem.removeChild(elem.lastChild);
-            }
-            let i = player.equipped[equipSlots[slot]];
-            if (i) {
-                let x = i.image.cloneNode(false);
-                if (!(x instanceof HTMLElement)) {
-                    console.log("Not an element: ", x);
-                    return;
-                }
-                x.dataset.tileNumber = "" + i.tileNumber;
-                x.dataset.name = i.name;
-                x.draggable = true;
-                x.addEventListener("dragstart", (event) => {
-                    if (!(event.target instanceof HTMLElement)) {
-                        console.log("empty target", event);
-                        return;
-                    }
-                    if (!i) {
-                        console.log("Empty Item", player.equipped, equipSlots[slot]);
-                        return;
-                    }
-                    draggedItem = { element: event.target, item: i, source: "inventory" };
-                    // This is called for inventory items only
-                    // event.preventDefault()
-                })
-                elem.appendChild(x)
-            }
-        }
-    }
     let canvas = document.getElementById('canvas');
     if (!(canvas instanceof HTMLCanvasElement)) {
         return;
     }
-
-    const inventoryBox = getElement('inventoryBox');
-    inventoryBox.addEventListener("dragover", (event) => {
-        if (inventoryBox != event.target || !draggedItem || draggedItem.source == "inventory") { return; }
-        event.preventDefault();
-    })
-    inventoryBox.addEventListener("dragenter", (event) => {
-        if (inventoryBox != event.target || !draggedItem || draggedItem.source == "inventory") { return; }
-        inventoryBox.classList.add("dragHover");
-        event.preventDefault();
-    })
-    inventoryBox.addEventListener("dragleave", (event) => {
-        if (inventoryBox != event.target || !draggedItem || draggedItem.source == "inventory") { return; }
-        inventoryBox.classList.remove("dragHover");
-        event.preventDefault();
-    })
-    inventoryBox.addEventListener("drop", (event) => {
-        if (inventoryBox != event.target || !draggedItem || draggedItem.source == "inventory") { return; }
-
-        let equippedItem = player.equipped[equipSlots[draggedItem.source]];
-        if (equippedItem) {
-            delete player.equipped[equipSlots[draggedItem.source]];
-            player.inventory.push(equippedItem);
-        }
-        inventoryBox.classList.remove("dragHover");
-        updateInventory()
-        event.preventDefault();
-    })
-
 
 
     updateCanvasSize(document, canvas);
     document.addEventListener("keydown", (event) => {
         keystate[event.keyCode] = true;
         if (event.key == "i") {
-            const inventoryUI = getElement('box');
-            if (inventoryUI.style.visibility != "hidden") {
-                inventoryUI.style.visibility = "hidden"
-            } else {
-                updateInventory()
-                inventoryUI.style.visibility = "visible"
-            }
+            inventory.toggleVisibility();
             event.preventDefault();
 
         } else if (event.key == "g") {
-
-            let item = mapCurrent.getItem(player.characterPos_w);
-            console.log("test", item);
-            if (item) {
-                player.inventory.push(item);
-            }
+            dispatch(PickupItem);
             event.preventDefault();
         }
     });
@@ -351,90 +202,6 @@ Feet
     window.requestAnimationFrame(draw);
 
 
-    /**
-     *
-     * @param {string} id
-     */
-    function addDropListener(id) {
-        const elem = getElement(id);
-        elem.addEventListener("dragstart", (event) => {
-            if (!(event.target instanceof HTMLElement)) {
-                console.log("Target not an element: ", event);
-                return;
-            }
-            let item = player.equipped[equipSlots[id]];
-            if (!item) {
-                console.log("item is null", player.equipped, equipSlots, id)
-                return;
-            }
-            draggedItem = { element: event.target, item: item, source: id }
-            //delete player.equipped[equipSlots[id]];
-            // This is called for equip slots only
-            // event.preventDefault();
-        })
-        elem.addEventListener("dragover", (event) => {
-            event.preventDefault();
-        })
-        elem.addEventListener("dragenter", (event) => {
-            event.preventDefault();
-            // let item = mapCurrent.getItemByTileNumber(draggedItem.element.dataset.tileNumber);
-            if (!draggedItem || !(event.target instanceof HTMLElement)) {
-                return;
-            }
-            let item = draggedItem.item;
-            if (id in equipSlots && !player.equipped[equipSlots[id]] && event.target.id == id && equipableInSlot(item.equippedType, equipSlots[id])) {
-                event.target.classList.add("dragHover");
-            }
-        })
-        elem.addEventListener("dragleave", (event) => {
-            event.preventDefault();
-            if (!draggedItem || !(event.target instanceof HTMLElement)) {
-                return;
-            }
-            // let item = mapCurrent.getItemByTileNumber(draggedItem.element.dataset.tileNumber);
-            let item = draggedItem.item;
-            if (id in equipSlots && !player.equipped[equipSlots[id]] && event.target.id == id && equipableInSlot(item.equippedType, equipSlots[id])) {
-                event.target.classList.remove("dragHover");
-            }
-        })
-        elem.addEventListener("drop", (event) => {
-            event.preventDefault();
-            if (!draggedItem || !(event.target instanceof HTMLElement)) {
-                return;
-            }
-            // let item = mapCurrent.getItemByTileNumber(draggedItem.element.dataset.tileNumber);
-            let item = draggedItem.item;
-            if (id in equipSlots && !player.equipped[equipSlots[id]] && event.target.id == id && equipableInSlot(item.equippedType, equipSlots[id])) {
-                // draggedItem.parentNode.removeChild( draggedItem );
-
-                if (draggedItem.source == "inventory") {
-                    let inventory = []
-                    let removed = false
-                    for (let i in player.inventory) {
-                        if (!removed && player.inventory[i].tileNumber == item.tileNumber) {
-                            removed = true;
-                        } else {
-                            inventory.push(player.inventory[i]);
-                        }
-                    }
-                    player.inventory = inventory;
-                } else {
-                    delete player.equipped[equipSlots[draggedItem.source]];
-                }
-                player.equipped[equipSlots[id]] = item;
-                // event.target.appendChild( draggedItem.element );
-                event.target.classList.remove("dragHover");
-                updateInventory()
-            }
-        })
-    }
-
-
-    for (let slot in equipSlots) {
-        addDropListener(slot);
-    }
-
-
 
 
 
@@ -466,7 +233,7 @@ Feet
         let mapRect = new Rect(new Vector2d(0, 0), mapSize.sub(canvasSize));
 
         // Top left corner of the viewable area, in world coordinates
-        let viewportOrigin_w = player.characterPos_w.sub(canvasSize.scale(0.5)).clamp(mapRect);
+        let viewportOrigin_w = worldState.player.characterPos_w.sub(canvasSize.scale(0.5)).clamp(mapRect);
 
         //convert rect and vector2djs to classes.
 
@@ -477,10 +244,10 @@ Feet
         });*/
 
         mapCurrent.draw(ctx, viewportOrigin_w, canvasSize);
-        let playerImageId = playerSet.getPlayerImageId(player.class, player.direction, player.step);
-        playerSet.draw(playerImageId, ctx, player.characterPos_w.sub(viewportOrigin_w));
+        let playerImageId = playerSet.getPlayerImageId(worldState.player.class, worldState.player.direction, worldState.player.step);
+        playerSet.draw(playerImageId, ctx, worldState.player.characterPos_w.sub(viewportOrigin_w));
 
-        for (const monster of monsters) {
+        for (const monster of worldState.monsters) {
             let monsterImageId = monsterSet.getPlayerImageId(monster.class, monster.direction, monster.step);
             monsterSet.draw(monsterImageId, ctx, monster.characterPos_w.sub(viewportOrigin_w));
 
@@ -488,7 +255,7 @@ Feet
             monster.updatePosition(mapCurrent.moveCharacter(dt))
         }
 
-        let speed = mapCurrent.getTileSpeed(player.characterPos_w, 0);
+        let speed = mapCurrent.getTileSpeed(worldState.player.characterPos_w, 0);
         // Draw Person
         //ctx.drawImage(playerImage, ...player.characterPos_w.sub(viewportOrigin_w).arr());
 
@@ -497,37 +264,27 @@ Feet
         let myVelocity = new Vector2d(0, 0);
         if (keystate[37]) {
             myVelocity = myVelocity.add(new Vector2d(-1, 0))
-            // player.move(4, player.characterPos_w)
         }
         //right arrow
         if (keystate[39]) {
             myVelocity = myVelocity.add(new Vector2d(1, 0))
-            // player.move(2, player.characterPos_w)
         }
         //up arrow
         if (keystate[38]) {
             myVelocity = myVelocity.add(new Vector2d(0, -1))
-            // player.move(1, player.characterPos_w)
         }
         //down arrow
         if (keystate[40]) {
             myVelocity = myVelocity.add(new Vector2d(0, 1))
-            // player.move(3, player.characterPos_w)
         }
 
         if (moveTarget) {
             let wTarget = mapCurrent.viewportToWorld(moveTarget, viewportOrigin_w);
-            myVelocity = wTarget.sub(player.characterPos_w).normalize();
-            // let moveAnimation = myVelocity.lookupByDir([
-            //     { key: new Vector2d(-1, 0), value: 4 },
-            //     { key: new Vector2d(1, 0), value: 2 },
-            //     { key: new Vector2d(0, -1), value: 1 },
-            //     { key: new Vector2d(0, 1), value: 3 }]);
-            // player.move(moveAnimation, player.characterPos_w);
+            myVelocity = wTarget.sub(worldState.player.characterPos_w).normalize();
         }
 
-        player.updateDirection(myVelocity);
-        player.updatePosition(mapCurrent.moveCharacter(dt))
+        worldState.player.updateDirection(myVelocity);
+        worldState.player.updatePosition(mapCurrent.moveCharacter(dt))
 
         window.requestAnimationFrame(draw);
     }

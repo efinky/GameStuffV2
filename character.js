@@ -2,9 +2,11 @@
 import { Vector2d } from "./vector2d.js"
 
 import { Item } from "./item.js";
+/** @typedef {"head" | "leftHand" | "rightHand" | "torso" | "legs" | "leftFoot" | "rightFoot"} EquippableSlot */
 
 
 /** @typedef {import("./tiledLoader.js").PlayerClass} CharacterClass*/
+
 export class Character {
     /**
      *
