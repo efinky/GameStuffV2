@@ -213,7 +213,7 @@
                 {
                  "name":"Step",
                  "type":"int",
-                 "value":2
+                 "value":0
                 }],
          "type":"Monster"
         }, 

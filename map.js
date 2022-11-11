@@ -5,26 +5,26 @@ import * as Tiled from "./tiledTypes.js";
 import { Item } from "./item.js";
 
 export class Map {
-  /**
-* @param {string} path
-*/
-static async load(path) {
-    /** @type {Tiled.Map} */
-    let data = await (await fetch(path)).json();
-    /** @type {{[key: string]: TileSet }} */
-    let loadedTilesets = {}
-    for (let i in data.tilesets) {
-        loadedTilesets[data.tilesets[i].source] = await TileSet.load(data.tilesets[i].source);
-        // let tileset = loadTileset(data.tilesets[i].source);
-        // console.log("sadf", data.tilesets[i].source);
-        // console.log("TileSet", v);
+    /**
+  * @param {string} path
+  */
+    static async load(path) {
+        /** @type {Tiled.Map} */
+        let data = await (await fetch(path)).json();
+        /** @type {{[key: string]: TileSet }} */
+        let loadedTilesets = {}
+        for (let i in data.tilesets) {
+            loadedTilesets[data.tilesets[i].source] = await TileSet.load(data.tilesets[i].source);
+            // let tileset = loadTileset(data.tilesets[i].source);
+            // console.log("sadf", data.tilesets[i].source);
+            // console.log("TileSet", v);
+        }
+
+        // { [key: string]: TileSet}
+
+        return new Map(data, loadedTilesets);
+
     }
-
-    // { [key: string]: TileSet}
-
-    return new Map(data, loadedTilesets);
-
-}
     /**
      *
      * @param {Tiled.Map} map
@@ -98,6 +98,21 @@ static async load(path) {
         speed += properties.SpeedTileSet;
 
         return speed / 4;
+    }
+
+    /**
+    * @param {number} dt
+    * @return {(pos_w: Vector2d, direction: Vector2d, speedMultiplier: number) => Vector2d}
+    */
+    moveCharacter(dt) {
+        return (pos_w, direction, speedMultiplier) => {
+            let speed = this.getTileSpeed(pos_w, 0);
+            let newcharacterPos_w = pos_w.add(direction.scale(speed * speedMultiplier * dt).mul(this.tileSize()));
+            if (!!this.getTileSpeed(newcharacterPos_w, 0)) {
+                return newcharacterPos_w;
+            }
+            return pos_w;
+        }
     }
 
     //[0, top-right, 0, bottom-right, 0, bottom-left, 0, top-left]

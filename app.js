@@ -2,19 +2,22 @@
 
 import { Vector2d } from "./vector2d.js"
 import { Rect } from "./rect.js"
-import { convertSpriteSheetTileset, convertTileset, isCharacterTile } from "./tiledLoader.js";
-import * as Tiled from "./tiledTypes.js";
-import { loadImage } from "./utils.js";
 import { Map } from "./map.js";
-import { TileSet } from "./tileSet.js";
 import { PlayerSet } from "./playerSet.js";
 import { Item } from "./item.js";
+import { Player } from "./player.js"
+import { Monster } from "./monster.js"
+
 /** @typedef {import("./tiledLoader.js").ItemProperty} ItemProperty */
 /** @typedef {import("./tiledLoader.js").EquipType} EquipType */
 /** @typedef {"head" | "leftHand" | "rightHand" | "torso" | "legs" | "leftFoot" | "rightFoot"} EquippableSlot */
 // import someData from "./test.json" assert { type: "json" };
 
 /*
+
+    - finish moving inventory into its own file
+
+
     DONE
     click to walk
 
@@ -23,7 +26,7 @@ import { Item } from "./item.js";
     NEXT UP
     Monsters
     Monster AI
-    
+
     TODO
 
 
@@ -44,7 +47,7 @@ import { Item } from "./item.js";
 
     improve iventory
     item weight (max inventory weight)
-    
+
     [state storage
     networking]
 
@@ -86,100 +89,6 @@ function getElement(id) {
     return elem;
 }
 
-/** @typedef {import("./tiledLoader.js").PlayerClass} PlayerClass*/
-
-
-class Person {
-    /**
-     *
-     * @param {string} name
-     * @param {PlayerClass} pClass
-     */
-    constructor(name, pClass) {
-        this.name = name;
-        this.class = pClass;
-        /** @type {Item[]} */
-        this.inventory = [];
-        /** @type {Record<EquippableSlot, Item | null>} */
-        this.equipped = {
-            "head": null,
-            "leftHand": null,
-            "rightHand": null,
-            "torso": null,
-            "legs": null,
-            "leftFoot": null,
-            "rightFoot": null
-        }
-        //used to animate step
-        this.step = 0;
-        //used to control direction facing
-        this.direction = 1;
-        this.images = []
-        this.lastStepPos = new Vector2d(0, 0);
-    }
-    //up is 1, right is 2, down is 3 and left is 4
-    /**
-     *
-     * @param {number} direction
-     * @param {Vector2d} pos
-     */
-    move(direction, pos) {
-        if (this.direction != direction || this.lastStepPos.distance(pos) > 20.0) {
-            this.step = this.step == 0 ? 1 : 0;
-            this.lastStepPos = pos;
-        }
-
-        this.direction = direction;
-    }
-}
-class Monster {
-    /**
-     *
-     * @param {string} name
-     * @param {PlayerClass} pClass
-     * @param {Vector2d} monsterPos_w
-     */
-    constructor(name, pClass, monsterPos_w) {
-        this.name = name;
-        this.class = pClass;
-        this.monsterPos_w = monsterPos_w;
-        /** @type {Item[]} */
-        this.inventory = [];
-        /** @type {Record<EquippableSlot, Item | null>} */
-        this.equipped = {
-            "head": null,
-            "leftHand": null,
-            "rightHand": null,
-            "torso": null,
-            "legs": null,
-            "leftFoot": null,
-            "rightFoot": null
-        }
-        //used to animate step
-        this.step = 0;
-        //used to control direction facing
-        this.direction = 1;
-        this.images = []
-        this.lastStepPos = new Vector2d(0, 0);
-        this.changeDirection = Math.floor(Math.random() * 40)
-    }
-    //up is 1, right is 2, down is 3 and left is 4
-    move() {
-        let direction = this.direction;
-        if (this.changeDirection === 0) {
-            direction = Math.floor(Math.random() * 4) + 1;
-        }
-        else {  
-            this.changeDirection = Math.floor(Math.random() * 40)
-        }
-        if (this.direction != direction || this.lastStepPos.distance(this.monsterPos_w) > 20.0) {
-            this.step = this.step == 0 ? 1 : 0;
-            this.lastStepPos = this.monsterPos_w;
-        }
-        this.changeDirection--;
-        this.direction = direction;
-    }
-}
 
 /** @param {MouseEvent} mouseEvent */
 function getCanvasMousePos(mouseEvent) {
@@ -208,9 +117,8 @@ export async function run() {
     let monsterSet = await PlayerSet.load("Monsters.json");
     /** @type {{[key: number]: boolean}} */
     let keystate = [];
-    let playerPos_w = new Vector2d(128, 128); //in world coordinates
     let timestamp = performance.now();
-    let player = new Person("Bob", "Warrior");
+    let player = new Player("Bob", "Warrior", new Vector2d(128, 128));
     /** @type {Monster[]} */
     let monsters = [];
     monsters.push(new Monster("bob", "Goblin", new Vector2d(130, 130)));
@@ -285,7 +193,7 @@ Feet
             }
             // x.dataset = {
             //     "tileNumber":i.tileNumber,
-            //     "name":i.name                
+            //     "name":i.name
             // };
             x.dataset.tileNumber = "" + i.tileNumber;
             x.dataset.name = i.name;
@@ -388,7 +296,7 @@ Feet
 
         } else if (event.key == "g") {
 
-            let item = mapCurrent.getItem(playerPos_w);
+            let item = mapCurrent.getItem(player.characterPos_w);
             console.log("test", item);
             if (item) {
                 player.inventory.push(item);
@@ -558,7 +466,7 @@ Feet
         let mapRect = new Rect(new Vector2d(0, 0), mapSize.sub(canvasSize));
 
         // Top left corner of the viewable area, in world coordinates
-        let viewportOrigin_w = playerPos_w.sub(canvasSize.scale(0.5)).clamp(mapRect);
+        let viewportOrigin_w = player.characterPos_w.sub(canvasSize.scale(0.5)).clamp(mapRect);
 
         //convert rect and vector2djs to classes.
 
@@ -570,59 +478,61 @@ Feet
 
         mapCurrent.draw(ctx, viewportOrigin_w, canvasSize);
         let playerImageId = playerSet.getPlayerImageId(player.class, player.direction, player.step);
-        playerSet.draw(playerImageId, ctx, playerPos_w.sub(viewportOrigin_w));
+        playerSet.draw(playerImageId, ctx, player.characterPos_w.sub(viewportOrigin_w));
 
         for (const monster of monsters) {
             let monsterImageId = monsterSet.getPlayerImageId(monster.class, monster.direction, monster.step);
-            monsterSet.draw(monsterImageId, ctx, monster.monsterPos_w.sub(viewportOrigin_w));
-            monster.move();
+            monsterSet.draw(monsterImageId, ctx, monster.characterPos_w.sub(viewportOrigin_w));
+
+            monster.timeToMove();
+            monster.updatePosition(mapCurrent.moveCharacter(dt))
         }
 
-        let speed = mapCurrent.getTileSpeed(playerPos_w, 0);
+        let speed = mapCurrent.getTileSpeed(player.characterPos_w, 0);
         // Draw Person
-        //ctx.drawImage(playerImage, ...playerPos_w.sub(viewportOrigin_w).arr());
+        //ctx.drawImage(playerImage, ...player.characterPos_w.sub(viewportOrigin_w).arr());
 
         //left arrow
-        let mySpeed = speed; ///currentSpeed(playerPos_w, speed);
+        let mySpeed = speed; ///currentSpeed(player.characterPos_w, speed);
         let myVelocity = new Vector2d(0, 0);
         if (keystate[37]) {
             myVelocity = myVelocity.add(new Vector2d(-1, 0))
-            player.move(4, playerPos_w)
+            // player.move(4, player.characterPos_w)
         }
         //right arrow
         if (keystate[39]) {
             myVelocity = myVelocity.add(new Vector2d(1, 0))
-            player.move(2, playerPos_w)
+            // player.move(2, player.characterPos_w)
         }
         //up arrow
         if (keystate[38]) {
             myVelocity = myVelocity.add(new Vector2d(0, -1))
-            player.move(1, playerPos_w)
+            // player.move(1, player.characterPos_w)
         }
         //down arrow
         if (keystate[40]) {
             myVelocity = myVelocity.add(new Vector2d(0, 1))
-            player.move(3, playerPos_w)
+            // player.move(3, player.characterPos_w)
         }
 
         if (moveTarget) {
             let wTarget = mapCurrent.viewportToWorld(moveTarget, viewportOrigin_w);
-            myVelocity = wTarget.sub(playerPos_w).normalize();
-            let moveAnimation = myVelocity.lookupByDir([
-                { key: new Vector2d(-1, 0), value: 4 },
-                { key: new Vector2d(1, 0), value: 2 },
-                { key: new Vector2d(0, -1), value: 1 },
-                { key: new Vector2d(0, 1), value: 3 }]);
-            player.move(moveAnimation, playerPos_w);
+            myVelocity = wTarget.sub(player.characterPos_w).normalize();
+            // let moveAnimation = myVelocity.lookupByDir([
+            //     { key: new Vector2d(-1, 0), value: 4 },
+            //     { key: new Vector2d(1, 0), value: 2 },
+            //     { key: new Vector2d(0, -1), value: 1 },
+            //     { key: new Vector2d(0, 1), value: 3 }]);
+            // player.move(moveAnimation, player.characterPos_w);
         }
 
-        let newplayerPos_w = playerPos_w.add(myVelocity.scale(mySpeed * dt * 32));
-        if (!!mapCurrent.getTileSpeed(newplayerPos_w, 0)) {
-            playerPos_w = newplayerPos_w;
-        }
+        player.updateDirection(myVelocity);
+        player.updatePosition(mapCurrent.moveCharacter(dt))
 
         window.requestAnimationFrame(draw);
     }
+
+
 
     /**
      *
