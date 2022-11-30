@@ -2,6 +2,7 @@
 import { Vector2d } from "./vector2d.js"
 
 import { Item } from "./item.js";
+import { Rect } from "./rect.js";
 /** @typedef {"head" | "leftHand" | "rightHand" | "torso" | "legs" | "leftFoot" | "rightFoot"} EquippableSlot */
 
 
@@ -40,6 +41,19 @@ export class Character {
         this.lastStepPos = new Vector2d(0, 0);
         this.characterPos_w = characterPos_w;
         this.speedMultiplier = 1;
+    }
+
+    boundRect() {
+        const tl = this.characterPos_w;
+        const br = this.characterPos_w.add(Vector2d.fromScalar(32));
+        return new Rect(tl, br);
+    }
+
+    /**
+     * @param {Vector2d} newCharacterPos
+     */
+    collidesWith(newCharacterPos) {
+        return this.boundRect().overlaps(new Rect(newCharacterPos, newCharacterPos.add(Vector2d.fromScalar(32))))
     }
     // /**
     //  *

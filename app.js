@@ -243,16 +243,16 @@ export async function run() {
             ctx.drawImage(document.getElementById(imageArray[p.mapLookup(map)]), ...p.scale(32).sub(viewportOrigin_w).arr());
         });*/
 
+        const characters = worldState.characters();
         mapCurrent.draw(ctx, viewportOrigin_w, canvasSize);
         let playerImageId = playerSet.getPlayerImageId(worldState.player.class, worldState.player.direction, worldState.player.step);
         playerSet.draw(playerImageId, ctx, worldState.player.characterPos_w.sub(viewportOrigin_w));
-
         for (const monster of worldState.monsters) {
             let monsterImageId = monsterSet.getPlayerImageId(monster.class, monster.direction, monster.step);
             monsterSet.draw(monsterImageId, ctx, monster.characterPos_w.sub(viewportOrigin_w));
 
-            monster.timeToMove();
-            monster.updatePosition(mapCurrent.moveCharacter(dt))
+            monster.timeToMove(worldState.player.characterPos_w);
+            monster.updatePosition(mapCurrent.moveCharacter(dt, monster, characters))
         }
 
         let speed = mapCurrent.getTileSpeed(worldState.player.characterPos_w, 0);
@@ -284,7 +284,7 @@ export async function run() {
         }
 
         worldState.player.updateDirection(myVelocity);
-        worldState.player.updatePosition(mapCurrent.moveCharacter(dt))
+        worldState.player.updatePosition(mapCurrent.moveCharacter(dt, worldState.player, characters))
 
         window.requestAnimationFrame(draw);
     }

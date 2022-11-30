@@ -3,6 +3,7 @@ import { Rect } from "./rect.js"
 import { TileSet } from "./tileSet.js"
 import * as Tiled from "./tiledTypes.js";
 import { Item } from "./item.js";
+import { Character } from "./character.js";
 
 export class Map {
     /**
@@ -102,13 +103,25 @@ export class Map {
 
     /**
     * @param {number} dt
+    * @param {Character} myCharacter
+    * @param {Character[]} characters
     * @return {(pos_w: Vector2d, direction: Vector2d, speedMultiplier: number) => Vector2d}
     */
-    moveCharacter(dt) {
+    moveCharacter(dt, myCharacter, characters) {
         return (pos_w, direction, speedMultiplier) => {
             let speed = this.getTileSpeed(pos_w, 0);
             let newcharacterPos_w = pos_w.add(direction.scale(speed * speedMultiplier * dt).mul(this.tileSize()));
-            if (!!this.getTileSpeed(newcharacterPos_w, 0)) {
+            let collides = false;
+            for (let character of characters) {
+                if (myCharacter === character) {
+                    continue;
+                }
+                if (character.collidesWith(newcharacterPos_w)) {
+                    console.log("collides:", character.name);
+                    collides = true;
+                }
+            }
+            if (!!this.getTileSpeed(newcharacterPos_w, 0) && !collides) {
                 return newcharacterPos_w;
             }
             return pos_w;

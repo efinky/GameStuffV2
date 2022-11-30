@@ -18,23 +18,36 @@ export class Monster extends Character {
         this.speedMultiplier = 0.7;
     }
 
-    timeToMove() {
-        this.moveCount--;
-        if (this.moveCount === 0) {
-
-            this.moveCount = Math.floor(Math.random() * 50) + 10;
-            this.direction = Math.floor(Math.random() * 4) + 1;
-            let newVelocity = [
-                new Vector2d(0, -1),
-                new Vector2d(1, 0),
-                new Vector2d(0, 1),
-                new Vector2d(-1, 0),
-            ][this.direction-1];
-            if (!newVelocity) {
-                throw Error("Error calculating new monster velocity");
-            }
-            this.myVelocity = newVelocity;
+    /**
+     * 
+     * @param {Vector2d} player_pos 
+     * @returns 
+     */
+    timeToMove(player_pos) {
+        if (this.characterPos_w.distance(player_pos) < 300) {
+            this.myVelocity = this.characterPos_w.directionTo(player_pos);
         }
+        else {
+            this.moveCount--;
+            if (this.moveCount === 0) {
+
+                this.moveCount = Math.floor(Math.random() * 500) + 100;
+                this.direction = Math.floor(Math.random() * 4) + 1;
+                let newVelocity = [
+                    new Vector2d(0, -1),
+                    new Vector2d(1, 0),
+                    new Vector2d(0, 1),
+                    new Vector2d(-1, 0),
+                ][this.direction-1];
+                if (!newVelocity) {
+                    throw Error("Error calculating new monster velocity");
+                }
+                this.myVelocity = newVelocity;
+            }
+        
+        }
+
+        
         return this.direction;
     }
     //up is 1, right is 2, down is 3 and left is 4
