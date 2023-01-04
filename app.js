@@ -153,6 +153,14 @@ export async function run() {
         } else if (event.key == "g") {
             dispatch(PickupItem);
             event.preventDefault();
+        }else if (event.key == "a") {
+            //find direction player is facing
+            //get bounding box for where character is facing
+            //search character list for any character in that bounding box.
+            console.log("dir",worldState.player.direction);
+            console.log("position", worldState.player.characterPos_w);
+            console.log("lastVel", worldState.player.lastVelocity);
+            worldState.player.attack(worldState.monsters);
         }
     });
     document.addEventListener("keyup", (event) => {
@@ -243,13 +251,11 @@ export async function run() {
             ctx.drawImage(document.getElementById(imageArray[p.mapLookup(map)]), ...p.scale(32).sub(viewportOrigin_w).arr());
         });*/
 
+
+
         const characters = worldState.characters();
-        mapCurrent.draw(ctx, viewportOrigin_w, canvasSize);
-        let playerImageId = playerSet.getPlayerImageId(worldState.player.class, worldState.player.direction, worldState.player.step);
-        playerSet.draw(playerImageId, ctx, worldState.player.characterPos_w.sub(viewportOrigin_w));
+
         for (const monster of worldState.monsters) {
-            let monsterImageId = monsterSet.getPlayerImageId(monster.class, monster.direction, monster.step);
-            monsterSet.draw(monsterImageId, ctx, monster.characterPos_w.sub(viewportOrigin_w));
 
             monster.timeToMove(worldState.player.characterPos_w);
             monster.updatePosition(mapCurrent.moveCharacter(dt, monster, characters))
@@ -277,6 +283,7 @@ export async function run() {
         if (keystate[40]) {
             myVelocity = myVelocity.add(new Vector2d(0, 1))
         }
+        
 
         if (moveTarget) {
             let wTarget = mapCurrent.viewportToWorld(moveTarget, viewportOrigin_w);
@@ -285,6 +292,32 @@ export async function run() {
 
         worldState.player.updateDirection(myVelocity);
         worldState.player.updatePosition(mapCurrent.moveCharacter(dt, worldState.player, characters))
+
+        mapCurrent.draw(ctx, viewportOrigin_w, canvasSize);
+        let playerImageId = playerSet.getPlayerImageId(worldState.player.class, worldState.player.direction, worldState.player.step);
+        playerSet.draw(playerImageId, ctx, worldState.player.characterPos_w.sub(viewportOrigin_w));
+        for (const monster of worldState.monsters) {
+            let monsterImageId = monsterSet.getPlayerImageId(monster.class, monster.direction, monster.step);
+            monsterSet.draw(monsterImageId, ctx, monster.characterPos_w.sub(viewportOrigin_w));
+        }
+
+        for (const character of characters) {
+            const {x, y} = character.characterPos_w.sub(viewportOrigin_w);
+
+            if (character.hp !== character.maxHp){
+                const health_percent = (character.hp / character.maxHp);
+                const w = health_percent * 32;
+                ctx.fillStyle = "#00FF00";
+                if (health_percent < 0.7) {
+                    ctx.fillStyle = "#FFFF00";
+                }
+                if (health_percent < 0.4) {
+                    ctx.fillStyle = "#FF0000";
+                }
+                ctx.fillRect(x, y-3, w, 2);
+            }
+        }
+
 
         window.requestAnimationFrame(draw);
     }

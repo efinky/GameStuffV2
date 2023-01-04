@@ -117,7 +117,6 @@ export class Map {
                     continue;
                 }
                 if (character.collidesWith(newcharacterPos_w)) {
-                    console.log("collides:", character.name);
                     collides = true;
                 }
             }

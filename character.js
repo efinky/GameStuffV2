@@ -31,22 +31,58 @@ export class Character {
             "leftFoot": null,
             "rightFoot": null
         }
+        this.maxHp = 100;
+        this.hp = 100;
+        this.baseDamage = 10;
         //used to animate step
         this.step = 0;
         //used to control direction facing
         //up is 1, right is 2, down is 3 and left is 4
         this.direction = 1;
         this.myVelocity = new Vector2d(1, 0);
-        this.images = []
-        this.lastStepPos = new Vector2d(0, 0);
+        this.lastVelocity = this.myVelocity;
+        this.images = [];
+        this.lastStepPos = characterPos_w;
         this.characterPos_w = characterPos_w;
         this.speedMultiplier = 1;
+    }
+
+    /**
+     * @param {Character[]} characters
+     */
+    pickTarget(characters) {
+        let hitPoint = this.boundRect().center().add(this.lastVelocity.scale(32));
+        let chars = [...characters];
+        return chars.filter((c) =>
+            hitPoint.insideOf(c.boundRect())
+        ).sort((a, b) => a.characterPos_w.distance(this.characterPos_w) - b.characterPos_w.distance(this.characterPos_w)).shift()
     }
 
     boundRect() {
         const tl = this.characterPos_w;
         const br = this.characterPos_w.add(Vector2d.fromScalar(32));
         return new Rect(tl, br);
+    }
+    /**
+     * 
+     * @param {number} damageDealt 
+     */
+    hit(damageDealt) {
+        this.hp -= damageDealt;
+    }
+    /**
+     * 
+     * @param {Character[]} characters 
+     * @returns 
+     */
+    attack(characters) {
+        console.log(characters);
+        let target = this.pickTarget(characters);
+        if (target) {
+            console.log("HIT", target);
+            target.hit(this.baseDamage);
+        }
+        console.log("hit?");
     }
 
     /**
@@ -84,13 +120,16 @@ export class Character {
 
     /** @param {(pos_w: Vector2d, direction: Vector2d, speedMultiplier: number) => Vector2d} f */
     updatePosition(f) {
-        this.characterPos_w = f(this.characterPos_w, this.myVelocity, this.speedMultiplier)
-        let direction = this.directionFrame();
-        if (this.direction != direction || this.lastStepPos.distance(this.characterPos_w) > 20.0) {
-            this.step = this.step == 0 ? 1 : 0;
-            this.lastStepPos = this.characterPos_w;
-        }
+        if (this.myVelocity.magnitude() != 0.0) {
+            this.characterPos_w = f(this.characterPos_w, this.myVelocity, this.speedMultiplier);
+            let direction = this.directionFrame();
+            if (this.direction != direction || this.lastStepPos.distance(this.characterPos_w) > 20.0) {
+                this.step = this.step == 0 ? 1 : 0;
+                this.lastStepPos = this.characterPos_w;
+            }
+            this.lastVelocity = this.myVelocity;
 
-        this.direction = direction;
+            this.direction = direction;
+        }
     }
 }
