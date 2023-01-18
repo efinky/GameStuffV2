@@ -43,6 +43,7 @@ export class Monster extends Character {
                     throw Error("Error calculating new monster velocity");
                 }
                 this.myVelocity = newVelocity;
+                
             }
         
         }

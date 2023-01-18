@@ -24,6 +24,7 @@ export class WorldState {
         this.monsters.push(new Monster("bob2", "Goblin", new Vector2d((Math.random() * 1000), (Math.random() * 1000))));
         this.monsters.push(new Monster("bob3", "Goblin", new Vector2d((Math.random() * 1000), (Math.random() * 1000))));
         this.monsters.push(new Monster("bob4", "Goblin", new Vector2d((Math.random() * 1000), (Math.random() * 1000))));
+        this.time = 0;
     }
 
     characters() {

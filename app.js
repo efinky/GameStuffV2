@@ -7,6 +7,8 @@ import { PlayerSet as CharacterSet } from "./playerSet.js";
 import { Inventory } from "./inventory.js"
 import { WorldState } from "./worldState.js"
 import * as Events from "./events.js"; 
+import { drawCharacterHealthBars } from "./drawAttack.js";
+import { moveMonsters, movePlayer } from "./movement.js";
 
 
 /** @typedef {import("./tiledLoader.js").ItemProperty} ItemProperty */
@@ -236,14 +238,6 @@ export async function run() {
 
 
 
-        const characters = worldState.characters();
-
-        for (const monster of worldState.monsters) {
-
-            monster.timeToMove(worldState.player.characterPos_w);
-            monster.updatePosition(mapCurrent.moveCharacter(dt, monster, characters))
-        }
-
         let speed = mapCurrent.getTileSpeed(worldState.player.characterPos_w, 0);
         // Draw Person
         //ctx.drawImage(playerImage, ...player.characterPos_w.sub(viewportOrigin_w).arr());
@@ -266,15 +260,18 @@ export async function run() {
         if (keystate[40]) {
             myVelocity = myVelocity.add(new Vector2d(0, 1))
         }
-        
 
         if (moveTarget) {
             let wTarget = mapCurrent.viewportToWorld(moveTarget, viewportOrigin_w);
             myVelocity = wTarget.sub(worldState.player.characterPos_w).normalize();
         }
 
-        worldState.player.updateDirection(myVelocity);
-        worldState.player.updatePosition(mapCurrent.moveCharacter(dt, worldState.player, characters))
+
+        const characters = worldState.characters();
+
+        moveMonsters(dt, worldState.monsters, worldState.player, characters, mapCurrent);
+
+        movePlayer(dt, worldState.player, myVelocity, characters, mapCurrent);
 
         mapCurrent.draw(ctx, viewportOrigin_w, canvasSize);
         let playerImageId = playerSet.getPlayerImageId(worldState.player.class, worldState.player.direction, worldState.player.step);
@@ -284,23 +281,10 @@ export async function run() {
             monsterSet.draw(monsterImageId, ctx, monster.characterPos_w.sub(viewportOrigin_w));
         }
 
-        for (const character of characters) {
-            const {x, y} = character.characterPos_w.sub(viewportOrigin_w);
+        drawCharacterHealthBars(characters, viewportOrigin_w, ctx);
 
-            if (character.hp !== character.maxHp){
-                const health_percent = (character.hp / character.maxHp);
-                const w = health_percent * 32;
-                ctx.fillStyle = "#00FF00";
-                if (health_percent < 0.7) {
-                    ctx.fillStyle = "#FFFF00";
-                }
-                if (health_percent < 0.4) {
-                    ctx.fillStyle = "#FF0000";
-                }
-                ctx.fillRect(x, y-3, w, 2);
-            }
-        }
 
+        worldState.time += dt;
 
         window.requestAnimationFrame(draw);
     }

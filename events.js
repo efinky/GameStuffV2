@@ -1,5 +1,6 @@
 import { Character } from "./character.js";
 import { Monster } from "./monster.js";
+import { playerAttack } from "./movement.js";
 import { WorldState } from "./worldState.js";
 /** @typedef {{eventType: "monsterDied", monster: Monster}} WorldEvent */
 
@@ -23,7 +24,7 @@ export const PickupItem = (state) => {
  */
 export const PlayerAttack = (state) => {
   /**@type {Character | null} */
-  let deadMonster = state.player.attack(state.monsters);
+  let deadMonster = playerAttack(state.time, state.player, state.monsters);
   if (deadMonster) {
     MonsterDeath(deadMonster)(state)
   }

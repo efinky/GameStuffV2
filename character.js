@@ -39,25 +39,22 @@ export class Character {
         //used to control direction facing
         //up is 1, right is 2, down is 3 and left is 4
         this.direction = 1;
+        this.attackReady = 0;
+        this.cooldown = 0.1;
         this.myVelocity = new Vector2d(1, 0);
         this.lastVelocity = this.myVelocity;
+        /**@type {string[]} */
         this.images = [];
         this.lastStepPos = characterPos_w;
         this.characterPos_w = characterPos_w;
         this.speedMultiplier = 1;
     }
 
-    /**
-     * @param {Character[]} characters
-     */
-    pickTarget(characters) {
-        let hitPoint = this.boundRect().center().add(this.lastVelocity.scale(32));
-        let chars = [...characters];
-        return chars.filter((c) =>
-            hitPoint.insideOf(c.boundRect())
-        ).sort((a, b) => a.characterPos_w.distance(this.characterPos_w) - b.characterPos_w.distance(this.characterPos_w)).shift()
+    healthPercent() {
+        return this.hp / this.maxHp;
     }
 
+    
     boundRect() {
         const tl = this.characterPos_w;
         const br = this.characterPos_w.add(Vector2d.fromScalar(32));
@@ -65,29 +62,23 @@ export class Character {
     }
     /**
      * 
-     * @param {number} damageDealt 
+     * @param {number} damageDealt
      */
     hit(damageDealt) {
         this.hp -= damageDealt;
         return this.hp <= 0;
     }
     /**
-     * 
-     * @param {Character[]} characters 
-
+    * @param {number} time
+    * @param {Character} character
      */
-    attack(characters) {
-        console.log(characters);
-        let target = this.pickTarget(characters);
-        if (target) {
-            console.log("HIT", target);
-            let died = target.hit(this.baseDamage);
-            if (died) {
-                return target;
-            }
+    attack(time, character) {
+        let died = false;
+        if (time > this.attackReady) {
+            died = character.hit(this.baseDamage);
+            this.attackReady = time + this.cooldown;
         }
-        return null;
-        console.log("hit?");
+        return died;
     }
 
     /**
@@ -123,18 +114,16 @@ export class Character {
         this.myVelocity = myDirection;
     }
 
-    /** @param {(pos_w: Vector2d, direction: Vector2d, speedMultiplier: number) => Vector2d} f */
-    updatePosition(f) {
-        if (this.myVelocity.magnitude() != 0.0) {
-            this.characterPos_w = f(this.characterPos_w, this.myVelocity, this.speedMultiplier);
-            let direction = this.directionFrame();
-            if (this.direction != direction || this.lastStepPos.distance(this.characterPos_w) > 20.0) {
-                this.step = this.step == 0 ? 1 : 0;
-                this.lastStepPos = this.characterPos_w;
-            }
-            this.lastVelocity = this.myVelocity;
-
-            this.direction = direction;
+    /** @param {Vector2d} newPos */
+    updatePosition(newPos) {
+        this.characterPos_w = newPos;// f(this.characterPos_w, this.myVelocity, this.speedMultiplier);
+        let direction = this.directionFrame();
+        if (this.direction != direction || this.lastStepPos.distance(this.characterPos_w) > 20.0) {
+            this.step = this.step == 0 ? 1 : 0;
+            this.lastStepPos = this.characterPos_w;
         }
+        this.lastVelocity = this.myVelocity;
+
+        this.direction = direction;
     }
 }
