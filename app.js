@@ -4,11 +4,10 @@ import { Vector2d } from "./vector2d.js"
 import { Rect } from "./rect.js"
 import { Map } from "./map.js";
 import { PlayerSet as CharacterSet } from "./playerSet.js";
-import { Item } from "./item.js";
-import { Player } from "./player.js"
-import { Monster } from "./monster.js"
 import { Inventory } from "./inventory.js"
 import { WorldState } from "./worldState.js"
+import * as Events from "./events.js"; 
+
 
 /** @typedef {import("./tiledLoader.js").ItemProperty} ItemProperty */
 /** @typedef {import("./tiledLoader.js").EquipType} EquipType */
@@ -105,30 +104,16 @@ function getCanvasMousePos(mouseEvent) {
     );
 }
 
-/** @param {WorldState} state */
-const PickupItem = (state) => {
-    let item = state.mapCurrent.getItem(state.player.characterPos_w);
-    if (item) {
-        state.player.inventory.push(item);
-    }
-}
 
 
 
-
-/** @type {WorldState} */
-let worldState;
-
-/** @param {(state: WorldState) => void} f */
-export function dispatch(f) {
-    f(worldState);
-}
 
 export async function run() {
     let mapCurrent = await Map.load("BasicMap.json");
     let playerSet = await CharacterSet.load("Player.json");
     let monsterSet = await CharacterSet.load("Monsters.json");
-    worldState = new WorldState(mapCurrent, playerSet, monsterSet);
+    let worldState = new WorldState(mapCurrent, playerSet, monsterSet);
+    Events.setWorldState(worldState);
     /** @type {{[key: number]: boolean}} */
     let keystate = [];
     let timestamp = performance.now();
@@ -148,11 +133,8 @@ export async function run() {
         keystate[event.keyCode] = true;
         if (event.key == "i") {
             inventory.toggleVisibility();
-            event.preventDefault();
-
         } else if (event.key == "g") {
-            dispatch(PickupItem);
-            event.preventDefault();
+            Events.dispatch(Events.PickupItem);
         }else if (event.key == "a") {
             //find direction player is facing
             //get bounding box for where character is facing
@@ -160,8 +142,9 @@ export async function run() {
             console.log("dir",worldState.player.direction);
             console.log("position", worldState.player.characterPos_w);
             console.log("lastVel", worldState.player.lastVelocity);
-            worldState.player.attack(worldState.monsters);
+            Events.dispatch(Events.PlayerAttack);
         }
+        event.preventDefault();
     });
     document.addEventListener("keyup", (event) => {
         keystate[event.keyCode] = false;

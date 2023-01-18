@@ -4,7 +4,7 @@
 import { Player } from "./player.js";
 import { Item } from "./item.js";
 import { WorldState } from "./worldState.js";
-import { dispatch } from "./app.js";
+import { dispatch } from "./events.js";
 
 /** 
 @param {string} source 

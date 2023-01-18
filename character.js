@@ -69,19 +69,24 @@ export class Character {
      */
     hit(damageDealt) {
         this.hp -= damageDealt;
+        return this.hp <= 0;
     }
     /**
      * 
      * @param {Character[]} characters 
-     * @returns 
+
      */
     attack(characters) {
         console.log(characters);
         let target = this.pickTarget(characters);
         if (target) {
             console.log("HIT", target);
-            target.hit(this.baseDamage);
+            let died = target.hit(this.baseDamage);
+            if (died) {
+                return target;
+            }
         }
+        return null;
         console.log("hit?");
     }
 
