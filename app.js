@@ -269,7 +269,7 @@ export async function run() {
 
         const characters = worldState.characters();
 
-        moveMonsters(dt, worldState.monsters, worldState.player, characters, mapCurrent);
+        moveMonsters(dt, worldState.time, worldState.monsters, worldState.player, characters, mapCurrent);
 
         movePlayer(dt, worldState.player, myVelocity, characters, mapCurrent);
 

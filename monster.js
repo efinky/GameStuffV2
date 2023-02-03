@@ -16,6 +16,7 @@ export class Monster extends Character {
         this.direction = Math.floor(Math.random() * 4) + 1;
         this.moveCount = Math.floor(Math.random() * 50) + 10;
         this.speedMultiplier = 0.7;
+        this.cooldown = .7
     }
 
     /**

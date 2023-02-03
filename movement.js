@@ -73,12 +73,13 @@ function moveCharacter(dt, map, myCharacter, characters) {
 /**
  * 
  * @param {number} dt 
+ * @param {number} time
  * @param {Monster[]} monsters 
  * @param {Player} player 
  * @param {Character[]} characters
  * @param {Map} map 
  */
-export function moveMonsters(dt, monsters, player, characters, map) {
+export function moveMonsters(dt, time, monsters, player, characters, map) {
     for (const monster of monsters) {
         monster.timeToMove(player.characterPos_w);
         const moveResult = moveCharacter(dt, map, monster, characters);
@@ -87,7 +88,10 @@ export function moveMonsters(dt, monsters, player, characters, map) {
         } else if (moveResult.result === "collided") {
             if (moveResult.character instanceof Player) {
                 // ATTACK!
-                // moveResult.character.hit()
+                let died = monster.attack(time, moveResult.character);
+                if (died)
+                    console.log("DEAD!");
+                
             }
         }
     }
