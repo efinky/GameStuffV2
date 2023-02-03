@@ -49,7 +49,7 @@ export function playerAttack(time, player, characters) {
 */
 function moveCharacter(dt, map, myCharacter, characters) {
     const pos_w = myCharacter.characterPos_w;
-    const velocity = myCharacter.myVelocity;
+    const velocity = myCharacter.velocity();
     const speedMultiplier = myCharacter.speedMultiplier;
 
     let speed = map.getTileSpeed(pos_w, 0);
@@ -107,7 +107,7 @@ export function moveMonsters(dt, time, monsters, player, characters, map) {
  */
 export function movePlayer(dt, player, myVelocity, characters, map) {
     player.updateDirection(myVelocity);
-    if (myVelocity.magnitude() != 0.0) {
+    if (player.velocity().magnitude() != 0.0) {
         const moveResult = moveCharacter(dt, map, player, characters);
         if (moveResult.result === "success") {
             player.updatePosition(moveResult.pos)

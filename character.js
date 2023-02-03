@@ -42,12 +42,17 @@ export class Character {
         this.attackReady = 0;
         this.cooldown = 0.1;
         this.myVelocity = new Vector2d(1, 0);
+        this.collideVelocity = new Vector2d(0.0, 0);
         this.lastVelocity = this.myVelocity;
         /**@type {string[]} */
         this.images = [];
         this.lastStepPos = characterPos_w;
         this.characterPos_w = characterPos_w;
         this.speedMultiplier = 1;
+    }
+
+    velocity() {
+        return this.myVelocity.add(this.collideVelocity);
     }
 
     healthPercent() {
@@ -85,6 +90,16 @@ export class Character {
      * @param {Vector2d} newCharacterPos
      */
     collidesWith(newCharacterPos) {
+        // return this.boundRect().overlaps(new Rect(newCharacterPos, newCharacterPos.add(Vector2d.fromScalar(32))))
+        const tl = newCharacterPos.add(Vector2d.fromScalar(8));
+        const br = newCharacterPos.add(Vector2d.fromScalar(8)).add(Vector2d.fromScalar(16));
+        return this.boundRect().overlaps(new Rect(tl, br));
+    }
+
+    /**
+     * @param {Vector2d} newCharacterPos
+     */
+    softCollidesWith(newCharacterPos) {
         return this.boundRect().overlaps(new Rect(newCharacterPos, newCharacterPos.add(Vector2d.fromScalar(32))))
     }
     // /**
@@ -112,18 +127,27 @@ export class Character {
     /** @param {Vector2d} myDirection */
     updateDirection(myDirection) {
         this.myVelocity = myDirection;
+        //let direction = this.directionFrame();
+        
+        //this.direction = direction;
+           if (this.myVelocity.magnitude() > 0) {
+            this.lastVelocity = this.myVelocity;
+            this.direction = this.directionFrame();;
+        }
     }
 
     /** @param {Vector2d} newPos */
     updatePosition(newPos) {
         this.characterPos_w = newPos;// f(this.characterPos_w, this.myVelocity, this.speedMultiplier);
-        let direction = this.directionFrame();
-        if (this.direction != direction || this.lastStepPos.distance(this.characterPos_w) > 20.0) {
+        // let direction = this.directionFrame();
+        if (this.lastStepPos.distance(this.characterPos_w) > 20.0) {
             this.step = this.step == 0 ? 1 : 0;
             this.lastStepPos = this.characterPos_w;
         }
-        this.lastVelocity = this.myVelocity;
+        // if (this.myVelocity.magnitude() > 0) {
+        //     this.lastVelocity = this.myVelocity;
+        //     this.direction = direction;
+        // }
 
-        this.direction = direction;
     }
 }

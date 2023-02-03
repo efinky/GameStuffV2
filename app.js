@@ -9,6 +9,7 @@ import { WorldState } from "./worldState.js"
 import * as Events from "./events.js"; 
 import { drawCharacterHealthBars } from "./drawAttack.js";
 import { moveMonsters, movePlayer } from "./movement.js";
+import { Player } from "./player.js";
 
 
 /** @typedef {import("./tiledLoader.js").ItemProperty} ItemProperty */
@@ -272,13 +273,24 @@ export async function run() {
         moveMonsters(dt, worldState.time, worldState.monsters, worldState.player, characters, mapCurrent);
 
         movePlayer(dt, worldState.player, myVelocity, characters, mapCurrent);
+        
+        characters.sort((a, b) => {
+            return a.characterPos_w.y - b.characterPos_w.y;
+        });
+        
 
         mapCurrent.draw(ctx, viewportOrigin_w, canvasSize);
-        let playerImageId = playerSet.getPlayerImageId(worldState.player.class, worldState.player.direction, worldState.player.step);
-        playerSet.draw(playerImageId, ctx, worldState.player.characterPos_w.sub(viewportOrigin_w));
-        for (const monster of worldState.monsters) {
-            let monsterImageId = monsterSet.getPlayerImageId(monster.class, monster.direction, monster.step);
-            monsterSet.draw(monsterImageId, ctx, monster.characterPos_w.sub(viewportOrigin_w));
+        for (const character of characters) {
+            if (character instanceof Player) {
+                let playerImageId = playerSet.getPlayerImageId(worldState.player.class, worldState.player.direction, worldState.player.step);
+                playerSet.draw(playerImageId, ctx, worldState.player.characterPos_w.sub(viewportOrigin_w));
+        
+            }
+            else {
+                let monsterImageId = monsterSet.getPlayerImageId(character.class, character.direction, character.step);
+                monsterSet.draw(monsterImageId, ctx, character.characterPos_w.sub(viewportOrigin_w));
+            
+            }
         }
 
         drawCharacterHealthBars(characters, viewportOrigin_w, ctx);
@@ -288,7 +300,6 @@ export async function run() {
 
         window.requestAnimationFrame(draw);
     }
-
 
 
     /**
