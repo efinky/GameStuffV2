@@ -49,11 +49,33 @@ export function playerAttack(time, player, characters) {
 */
 function moveCharacter(dt, map, myCharacter, characters) {
     const pos_w = myCharacter.characterPos_w;
-    const velocity = myCharacter.velocity();
+    let velocity = myCharacter.velocity();
     const speedMultiplier = myCharacter.speedMultiplier;
 
     let speed = map.getTileSpeed(pos_w, 0);
-    let newcharacterPos_w = pos_w.add(velocity.scale(speed * speedMultiplier * dt).mul(map.tileSize()));
+    velocity = velocity.scale(speed * speedMultiplier * dt)
+
+    if (myCharacter instanceof Monster) {
+        for (let character of characters) {
+            if (myCharacter === character) {
+                continue;
+            }
+
+            if (character instanceof Monster) {
+                let otherCenter = character.boundRect().center();
+                let ourCenter = myCharacter.boundRect().center();
+                let distance = ourCenter.distance(otherCenter);
+                if (distance < 64) {
+                    let forceDir = ourCenter.sub(otherCenter).normalize();
+                    let force = 15.0 / (distance * distance);
+                    let forceVec = forceDir.scale(force * dt).mul(map.tileSize());
+                    velocity = velocity.add(forceVec);
+                }
+            }
+        }
+    }
+
+    let newcharacterPos_w = pos_w.add(velocity.mul(map.tileSize()));
 
     for (let character of characters) {
         if (myCharacter === character) {
@@ -63,6 +85,11 @@ function moveCharacter(dt, map, myCharacter, characters) {
             return { result: "collided", character };
         }
     }
+
+
+    //the closer we get the slower we move
+    //speed is only impacted when moving towards the other characters.  there is no hinderance to move away
+    //when not walking get pushed back 
 
     if (!map.getTileSpeed(newcharacterPos_w, 0)) {
         return { result: "notWalkable" };
@@ -83,6 +110,7 @@ export function moveMonsters(dt, time, monsters, player, characters, map) {
     for (const monster of monsters) {
         monster.timeToMove(player.characterPos_w);
         const moveResult = moveCharacter(dt, map, monster, characters);
+        //console.log(moveResult);
         if (moveResult.result === "success") {
             monster.updatePosition(moveResult.pos)
         } else if (moveResult.result === "collided") {
@@ -107,12 +135,12 @@ export function moveMonsters(dt, time, monsters, player, characters, map) {
  */
 export function movePlayer(dt, player, myVelocity, characters, map) {
     player.updateDirection(myVelocity);
-    if (player.velocity().magnitude() != 0.0) {
+    // if (player.velocity().magnitude() != 0.0) {
         const moveResult = moveCharacter(dt, map, player, characters);
         if (moveResult.result === "success") {
             player.updatePosition(moveResult.pos)
         }
-    }
+    // }
 }
 
 
