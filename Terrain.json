@@ -2383,7 +2383,7 @@
                         {
                          "name":"SpeedTileSet",
                          "type":"int",
-                         "value":3
+                         "value":0
                         }],
                  "tile":192
                 }, 

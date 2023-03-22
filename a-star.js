@@ -51,12 +51,11 @@ function reconstruct_path(came_from, current) {
 /**
  * @param {Vector2d} start
  * @param {Vector2d} goal
+ * @param {(coord: Vector2d) => {cost: number, coord: Vector2d}[]} neighbors
  * @param {(start: Vector2d, goal: Vector2d) => number} heuristic
- * @param {(coord: Vector2d) => Vector2d[]} neighbors
- * @param {(a: Vector2d, b: Vector2d) => number} cost
  * @returns {Vector2d[]}
  */
-function a_star(start, goal, heuristic, neighbors, cost, max_iterations = 10000) {
+export function aStar(start, goal, neighbors, heuristic = (s, g) => s.distance(g), max_iterations = 20) {
   /** @type {VectorMap<Vector2d>} */
   const came_from = new VectorMap();
   /** @type {VectorMap<number>} */
@@ -90,12 +89,12 @@ function a_star(start, goal, heuristic, neighbors, cost, max_iterations = 10000)
     open_set.splice(open_set.indexOf(current), 1);
     closed_set.push(current);
 
-    for (const neighbor of neighbors(current)) {
+    for (const {cost, coord: neighbor} of neighbors(current)) {
       if (closed_set.includes(neighbor)) {
         continue;
       }
 
-      const tentative_g_score = g_score.get(current) + cost(current, neighbor);
+      const tentative_g_score = g_score.get(current) + cost;
       if (!open_set.includes(neighbor)) {
         open_set.push(neighbor);
       } else if (tentative_g_score >= g_score.get(neighbor)) {

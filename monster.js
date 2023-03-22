@@ -17,8 +17,24 @@ export class Monster extends Character {
         this.moveCount = Math.floor(Math.random() * 50) + 10;
         this.speedMultiplier = 0.7;
         this.cooldown = .7
+        this.goalPosition = characterPos_w;
+        /**@type {Vector2d[] | []} */
+        this.path = [];
     }
-
+//incorcorate speed into astar pathing
+//monsters need goals
+//  pick random spot in 10 squares from center, or head towards player
+//use pathing to take monster to goal
+    /**
+     * 
+     * @param {Vector2d} monster_pos 
+     */
+    findRandomGoal(monster_pos){
+        let newx = Math.floor(Math.random() * 10) - 5;
+        let newy = Math.floor(Math.random() * 10) - 5;
+        let newPos = new Vector2d(newx, newy);
+        return monster_pos.add(newPos);
+    }
     /**
      * 
      * @param {Vector2d} player_pos 
@@ -44,12 +60,8 @@ export class Monster extends Character {
                     throw Error("Error calculating new monster velocity");
                 }
                 this.myVelocity = newVelocity;
-                
             }
-        
         }
-
-        
         return this.direction;
     }
     //up is 1, right is 2, down is 3 and left is 4

@@ -4,6 +4,7 @@ import { TileSet } from "./tileSet.js"
 import * as Tiled from "./tiledTypes.js";
 import { Item } from "./item.js";
 import { Character } from "./character.js";
+import { aStar } from "./a-star.js";
 
 export class Map {
     /**
@@ -293,6 +294,54 @@ export class Map {
         return pos_w.div(this.tileSize());
     }
 
+    /**
+     * @param {Vector2d} pos_w
+     */
+    tileToWorld(pos_w) {
+        return pos_w.mul(this.tileSize());
+    }
+
+    /**
+     * 
+     * @param {Vector2d} pos_t 
+     * @param {number} layer
+     * @returns 
+     */
+    neighbors(pos_t, layer) {
+        let neighbors = [];
+        for (let x = -1; x <= 1; x++) {
+            for (let y = -1; y <= 1; y++) {
+                if (x == 0 && y == 0) {
+                    continue;
+                }
+                //diaganols are more expensive
+                const costFactor = (x == pos_t.x || y == pos_t.y) ? 1 : 1.4;
+                // TODO what if diagonal movement is blocked by the two non-diagonal tiles?
+                const speed = this.getTileSpeed(this.tileToWorld(pos_t), layer);
+                if (speed == 0) {
+                    continue;
+                }
+                const cost = costFactor/speed;
+                const coord = pos_t.add(new Vector2d(x, y));
+
+                neighbors.push({cost, coord});
+            }
+        }
+        return neighbors;
+    }
+
+    /**
+     * 
+     * @param {Vector2d} start 
+     * @param {Vector2d} end 
+     * @param {number} layer
+     */
+    findPath(start, end, layer) {
+        const startTile = this.worldToTile(start).floor();
+        const endTile = this.worldToTile(end).floor();
+        const path = aStar(startTile, endTile, (pos) => this.neighbors(pos, layer));
+        return path;
+    }
     // rect() {
     //     let mapSize = new Vector2d(this.width, this.height);
     //     let tileSize = new Vector2d(this.tileWidth, this.tileHeight);

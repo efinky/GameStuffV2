@@ -108,7 +108,24 @@ function moveCharacter(dt, map, myCharacter, characters) {
  */
 export function moveMonsters(dt, time, monsters, player, characters, map) {
     for (const monster of monsters) {
-        monster.timeToMove(player.characterPos_w);
+        if (monster.characterPos_w.distance(player.characterPos_w) < 300) {
+            monster.myVelocity = monster.characterPos_w.directionTo(player.characterPos_w);
+        }
+        else {
+            if (monster.characterPos_w.distance(monster.goalPosition) < 10.0 || monster.path.length == 0) {
+                monster.goalPosition = monster.findRandomGoal(monster.characterPos_w);
+                monster.path = map.findPath(monster.characterPos_w, monster.goalPosition, 0);
+                console.log("PATH:", monster.path);
+            }
+            if (monster.path.length > 0) {
+                let nextPos = monster.path[0];
+                monster.myVelocity = nextPos.directionTo(monster.characterPos_w);
+                if (monster.characterPos_w.distance(nextPos) < 10.0) {
+                    monster.path.shift();
+                }
+            }
+        }
+        // monster.timeToMove(player.characterPos_w);
         const moveResult = moveCharacter(dt, map, monster, characters);
         //console.log(moveResult);
         if (moveResult.result === "success") {
