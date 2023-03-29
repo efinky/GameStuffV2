@@ -17,6 +17,8 @@ export class Monster extends Character {
         this.moveCount = Math.floor(Math.random() * 50) + 10;
         this.speedMultiplier = 0.7;
         this.cooldown = .7
+        this.stuckCounter = 0;
+        this.prevPos = characterPos_w;
         this.goalPosition = characterPos_w;
         /**@type {Vector2d[] | []} */
         this.path = [];
@@ -32,8 +34,26 @@ export class Monster extends Character {
     findRandomGoal(monster_pos){
         let newx = Math.floor(Math.random() * 10) - 5;
         let newy = Math.floor(Math.random() * 10) - 5;
-        let newPos = new Vector2d(newx, newy);
+        let newPos = new Vector2d(newx, newy).scale(32);
+        console.log("new Pos", newPos);
         return monster_pos.add(newPos);
+    }
+    /**
+     * 
+     */
+    ifStuck() {
+        if (this.prevPos.equal(this.characterPos_w)) {
+            this.stuckCounter++;
+        }
+        else
+        {
+            this.stuckCounter=0;
+        }
+        console.log('stuck', this.stuckCounter);
+        if(this.stuckCounter > 20) {
+            this.path = []
+        }
+        this.prevPos = this.characterPos_w;
     }
     /**
      * 

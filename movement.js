@@ -77,6 +77,16 @@ function moveCharacter(dt, map, myCharacter, characters) {
 
     let newcharacterPos_w = pos_w.add(velocity.mul(map.tileSize()));
 
+    if (!map.getTileSpeed(newcharacterPos_w, 0)) {
+        newcharacterPos_w = pos_w.add(new Vector2d(velocity.x, 0).mul(map.tileSize()));
+        if (!map.getTileSpeed(newcharacterPos_w, 0)) {
+            newcharacterPos_w = pos_w.add(new Vector2d(0, velocity.y).mul(map.tileSize()));
+            if (!map.getTileSpeed(newcharacterPos_w, 0)) {
+                return { result: "notWalkable" };
+            }
+        }
+    }
+
     for (let character of characters) {
         if (myCharacter === character) {
             continue;
@@ -89,17 +99,14 @@ function moveCharacter(dt, map, myCharacter, characters) {
 
     //the closer we get the slower we move
     //speed is only impacted when moving towards the other characters.  there is no hinderance to move away
-    //when not walking get pushed back 
+    //when not walking get pushed back
 
-    if (!map.getTileSpeed(newcharacterPos_w, 0)) {
-        return { result: "notWalkable" };
-    }
     return { result: "success", pos: newcharacterPos_w };
 }
 
 /**
  * 
- * @param {number} dt 
+ * @param {number} dt  
  * @param {number} time
  * @param {Monster[]} monsters 
  * @param {Player} player 
@@ -108,18 +115,42 @@ function moveCharacter(dt, map, myCharacter, characters) {
  */
 export function moveMonsters(dt, time, monsters, player, characters, map) {
     for (const monster of monsters) {
+        
+        monster.ifStuck();
         if (monster.characterPos_w.distance(player.characterPos_w) < 300) {
-            monster.myVelocity = monster.characterPos_w.directionTo(player.characterPos_w);
+            if (monster.path.length > 0 && monster.path[monster.path.length -1].distance(player.characterPos_w) > 32.0) {
+
+                
+                monster.path = map.findPath(monster.characterPos_w, player.characterPos_w, 0);
+               // console.log("PATH: ", monster.path);
+                // console.log("Distance", monster.path[monster.path.length -1].distance(player.characterPos_w));
+            }
+
+            if (monster.path.length == 0) {
+                monster.path = map.findPath(monster.characterPos_w, player.characterPos_w, 0);
+                
+            }
+            
+            //monster.myVelocity = monster.characterPos_w.directionTo(player.characterPos_w);
+            if (monster.path.length > 0) {
+                let nextPos = monster.path[0];
+                //nextPos.add(new Vector2d(16,16));
+                monster.myVelocity = monster.characterPos_w.directionTo(nextPos);
+                monster.myVelocity.clipTo(monster.characterPos_w.distance(nextPos))
+                if (monster.characterPos_w.distance(nextPos) < 10.0) {
+                    monster.path.shift();
+                }
+            }
         }
         else {
             if (monster.characterPos_w.distance(monster.goalPosition) < 10.0 || monster.path.length == 0) {
                 monster.goalPosition = monster.findRandomGoal(monster.characterPos_w);
                 monster.path = map.findPath(monster.characterPos_w, monster.goalPosition, 0);
-                console.log("PATH:", monster.path);
             }
             if (monster.path.length > 0) {
                 let nextPos = monster.path[0];
-                monster.myVelocity = nextPos.directionTo(monster.characterPos_w);
+                monster.myVelocity = monster.characterPos_w.directionTo(nextPos);
+                monster.myVelocity.clipTo(monster.characterPos_w.distance(nextPos))
                 if (monster.characterPos_w.distance(nextPos) < 10.0) {
                     monster.path.shift();
                 }

@@ -55,7 +55,8 @@ function reconstruct_path(came_from, current) {
  * @param {(start: Vector2d, goal: Vector2d) => number} heuristic
  * @returns {Vector2d[]}
  */
-export function aStar(start, goal, neighbors, heuristic = (s, g) => s.distance(g), max_iterations = 20) {
+export function aStar(start, goal, neighbors, heuristic = (s, g) => s.distance(g), max_iterations = 200) {
+  console.log("aStar", start, goal);
   /** @type {VectorMap<Vector2d>} */
   const came_from = new VectorMap();
   /** @type {VectorMap<number>} */
@@ -82,20 +83,20 @@ export function aStar(start, goal, neighbors, heuristic = (s, g) => s.distance(g
       }
     }
 
-    if (current === goal) {
+    if (current.equal(goal)) {
       return reconstruct_path(came_from, current);
     }
 
-    open_set.splice(open_set.indexOf(current), 1);
+    open_set.splice(open_set.findIndex((s) => s.equal(current)), 1);
     closed_set.push(current);
 
     for (const {cost, coord: neighbor} of neighbors(current)) {
-      if (closed_set.includes(neighbor)) {
+      if (closed_set.find((v) => v.equal(neighbor))) {
         continue;
       }
 
       const tentative_g_score = g_score.get(current) + cost;
-      if (!open_set.includes(neighbor)) {
+      if (!open_set.find((v) => v.equal(neighbor))) {
         open_set.push(neighbor);
       } else if (tentative_g_score >= g_score.get(neighbor)) {
         continue;
@@ -111,6 +112,8 @@ export function aStar(start, goal, neighbors, heuristic = (s, g) => s.distance(g
     }
     iterations++;
   }
+
+  console.log("aStar failed", open_set, closed_set);
 
   return [];
 }

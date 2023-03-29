@@ -289,7 +289,21 @@ export async function run() {
             else {
                 let monsterImageId = monsterSet.getPlayerImageId(character.class, character.direction, character.step);
                 monsterSet.draw(monsterImageId, ctx, character.characterPos_w.sub(viewportOrigin_w));
-            
+                //draw monster path:
+                if (character.path) {
+                    ctx.strokeStyle = "red";
+                    ctx.beginPath();
+                    ctx.moveTo(...character.characterPos_w.sub(viewportOrigin_w).arr());
+                    for (const p of character.path) {
+                        ctx.lineTo(...p.sub(viewportOrigin_w).arr());
+                    }
+                    ctx.stroke();
+                }
+                // draw cicle at character position
+                ctx.strokeStyle = "red";
+                ctx.beginPath();
+                ctx.arc(...character.characterPos_w.sub(viewportOrigin_w).arr(), 5, 0, 2 * Math.PI);
+                ctx.stroke();
             }
         }
 

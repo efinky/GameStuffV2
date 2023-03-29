@@ -295,10 +295,10 @@ export class Map {
     }
 
     /**
-     * @param {Vector2d} pos_w
+     * @param {Vector2d} pos_t
      */
-    tileToWorld(pos_w) {
-        return pos_w.mul(this.tileSize());
+    tileToWorld(pos_t) {
+        return pos_t.mul(this.tileSize());
     }
 
     /**
@@ -316,12 +316,21 @@ export class Map {
                 }
                 //diaganols are more expensive
                 const costFactor = (x == pos_t.x || y == pos_t.y) ? 1 : 1.4;
-                // TODO what if diagonal movement is blocked by the two non-diagonal tiles?
                 const speed = this.getTileSpeed(this.tileToWorld(pos_t), layer);
                 if (speed == 0) {
                     continue;
                 }
-                const cost = costFactor/speed;
+
+                // if diagonal movement is blocked by the two non-diagonal tiles
+                if (x != 0 && y != 0) {
+                    const speed1 = this.getTileSpeed(this.tileToWorld(pos_t.add(new Vector2d(x, 0))), layer);
+                    const speed2 = this.getTileSpeed(this.tileToWorld(pos_t.add(new Vector2d(0, y))), layer);
+                    if (speed1 == 0 || speed2 == 0) {
+                        continue;
+                    }
+                }
+
+                const cost = costFactor / speed;
                 const coord = pos_t.add(new Vector2d(x, y));
 
                 neighbors.push({cost, coord});
@@ -340,7 +349,10 @@ export class Map {
         const startTile = this.worldToTile(start).floor();
         const endTile = this.worldToTile(end).floor();
         const path = aStar(startTile, endTile, (pos) => this.neighbors(pos, layer));
-        return path;
+        if (path.length > 0) {
+            path.shift();
+        }
+        return path.map((pos) => this.tileToWorld(pos).add(new Vector2d(16,16)));
     }
     // rect() {
     //     let mapSize = new Vector2d(this.width, this.height);
