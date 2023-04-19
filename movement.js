@@ -189,6 +189,13 @@ export function movePlayer(dt, player, myVelocity, characters, map) {
             player.updatePosition(moveResult.pos)
         }
     // }
+
+    if (player.debugPath && (player.debugPath.from.distance(player.characterPos_w) > 4.0 || player.debugPath.path == null)) {
+        player.debugPath.from = player.characterPos_w;
+        player.debugPath.path = map.findPath(player.characterPos_w, player.debugPath.to, 0);
+    }
+
+    
 }
 
 

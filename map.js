@@ -316,7 +316,7 @@ export class Map {
                 }
                 //diaganols are more expensive
                 const costFactor = (x == pos_t.x || y == pos_t.y) ? 1 : 1.4;
-                const speed = this.getTileSpeed(this.tileToWorld(pos_t), layer);
+                const speed = this.getTileSpeed(this.tileToWorld(pos_t).add(new Vector2d(x, y)), layer);
                 if (speed == 0) {
                     continue;
                 }
@@ -352,7 +352,7 @@ export class Map {
         if (path.length > 0) {
             path.shift();
         }
-        return path.map((pos) => this.tileToWorld(pos).add(new Vector2d(16,16)));
+        return path.map((pos) => this.tileToWorld(pos)); //.add(new Vector2d(16,16)));
     }
     // rect() {
     //     let mapSize = new Vector2d(this.width, this.height);

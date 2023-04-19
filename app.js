@@ -17,60 +17,6 @@ import { Player } from "./player.js";
 /** @typedef {import("./character.js").EquippableSlot}  EquippableSlot */
 // import someData from "./test.json" assert { type: "json" };
 
-/*
-
-    - finish moving inventory into its own file
-
-
-    DONE
-    click to walk
-
-    Rename most "Player" class/things to "Character"
-    Make monsters move
-    NEXT UP
-    Monsters
-    Monster AI
-
-    TODO
-
-
-    touchscreen vs pc?
-        create a button for long range attack
-        melle is just walk into stuff?
-
-        create a button for inventory (as well as keyboard key)
-
-
-    [monsters
-    fighting
-    monster AI
-    health
-    damage]
-
-    sound effects (damage, stuff)
-
-    improve iventory
-    item weight (max inventory weight)
-
-    [state storage
-    networking]
-
-    drag to eat option
-    inventory vs equip box?
-*/
-
-
-
-
-
-
-
-
-// const tilesets = {
-//     "TileSetSheet.tsx": new TileSet(grass),
-//     "Items.tsx": new TileSet(items)
-// };
-
 
 /*
 
@@ -152,6 +98,9 @@ export async function run() {
     document.addEventListener("keyup", (event) => {
         keystate[event.keyCode] = false;
     });
+    canvas.addEventListener("contextmenu", (event) => {
+        event.preventDefault();
+    });
     canvas.addEventListener("mousedown", (event) => {
 
         if (event.button == 0) {
@@ -163,6 +112,20 @@ export async function run() {
             moveTarget = cPos;
             event.stopPropagation();
             console.log(moveTarget);
+        } else if (event.button == 2) {
+            const cPos = getCanvasMousePos(event);
+            if (cPos && canvas instanceof HTMLCanvasElement) {
+                let tileSize = mapCurrent.tileSize();
+                let mapSize = mapCurrent.size().mul(tileSize);
+                let canvasSize = new Vector2d(canvas.width, canvas.height);
+                let mapRect = new Rect(new Vector2d(0, 0), mapSize.sub(canvasSize));
+                let viewportOrigin_w = worldState.player.characterPos_w.sub(canvasSize.scale(0.5)).clamp(mapRect);
+                worldState.player.setDebugPathTarget(cPos.add(viewportOrigin_w));
+                // const debugPath = mapCurrent.findPath(worldState.player.characterPos_w, cPos.add(viewportOrigin_w), 0);
+                // worldState.player.debugPath = debugPath;
+            }
+            event.stopPropagation();
+            event.preventDefault();
         }
     })
     canvas.addEventListener("mouseup", (event) => {
@@ -172,6 +135,10 @@ export async function run() {
             moveTarget = null;
 
             console.log(moveTarget);
+        }
+        if (event.button == 2) {
+            event.stopPropagation();
+            event.preventDefault();
         }
     })
     canvas.addEventListener("mousemove", (event) => {
@@ -305,6 +272,17 @@ export async function run() {
                 ctx.arc(...character.characterPos_w.sub(viewportOrigin_w).arr(), 5, 0, 2 * Math.PI);
                 ctx.stroke();
             }
+        }
+
+        // draw player debug path
+        if (worldState.player.debugPath && worldState.player.debugPath.path) {
+            ctx.strokeStyle = "red";
+            ctx.beginPath();
+            ctx.moveTo(...worldState.player.characterPos_w.sub(viewportOrigin_w).arr());
+            for (const p of worldState.player.debugPath.path) {
+                ctx.lineTo(...p.sub(viewportOrigin_w).arr());
+            }
+            ctx.stroke();
         }
 
         drawCharacterHealthBars(characters, viewportOrigin_w, ctx);

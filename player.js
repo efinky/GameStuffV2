@@ -15,6 +15,19 @@ export class Player extends Character {
     constructor(name, cClass, characterPos_w) {
         super(name, cClass, characterPos_w)
         this.direction = Math.floor(Math.random() * 4) + 1;
+        /** @type {{ from: Vector2d, to: Vector2d, path: Vector2d[] | null }| null} */
+        this.debugPath = null;
+    }
+
+    /**
+     * @param {Vector2d} target
+     */
+    setDebugPathTarget(target) {
+        this.debugPath = {
+            from: this.characterPos_w,
+            to: target,
+            path: null,
+        };
     }
     //up is 1, right is 2, down is 3 and left is 4
     // /**
