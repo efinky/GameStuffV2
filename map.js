@@ -333,7 +333,7 @@ export class Map {
                 const cost = costFactor / speed;
                 const coord = pos_t.add(new Vector2d(x, y));
 
-                neighbors.push({cost, coord});
+                neighbors.push({ cost, coord });
             }
         }
         return neighbors;
@@ -344,11 +344,21 @@ export class Map {
      * @param {Vector2d} start 
      * @param {Vector2d} end 
      * @param {number} layer
+     * @param {Vector2d[]} [obstacles]
      */
-    findPath(start, end, layer) {
+    findPath(start, end, layer, obstacles = []) {
         const startTile = this.worldToTile(start).floor();
         const endTile = this.worldToTile(end).floor();
-        const path = aStar(startTile, endTile, (pos) => this.neighbors(pos, layer));
+        const obstacleTiles = obstacles.map((pos) => this.worldToTile(pos).floor());
+        const path = aStar(startTile, endTile, (pos) => this.neighbors(pos, layer)
+            .filter((neighbor) => 
+                !obstacleTiles.some((obstacle) => {
+                    let match = obstacle.equal(neighbor.coord);
+                    if (match) {
+                        console.log("obstacle", obstacle, neighbor.coord);
+                    }
+                    return match;
+                })));
         if (path.length > 0) {
             path.shift();
         }

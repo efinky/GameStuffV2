@@ -179,6 +179,10 @@ export async function run() {
 
         let dt = (now - timestamp) / 1000;
         timestamp = now;
+        if (dt > 0.1) {
+            window.requestAnimationFrame(draw);
+            return;
+        }
         let canvas = document.getElementById('canvas');
         if (!(canvas instanceof HTMLCanvasElement)) {
             return;

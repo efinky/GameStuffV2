@@ -49,7 +49,7 @@ export class Monster extends Character {
         {
             this.stuckCounter=0;
         }
-        console.log('stuck', this.stuckCounter);
+        // console.log('stuck', this.stuckCounter);
         if(this.stuckCounter > 20) {
             this.path = []
         }

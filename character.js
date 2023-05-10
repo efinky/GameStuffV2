@@ -90,7 +90,8 @@ export class Character {
      * @param {Vector2d} newCharacterPos
      */
     collidesWith(newCharacterPos) {
-        // return this.boundRect().overlaps(new Rect(newCharacterPos, newCharacterPos.add(Vector2d.fromScalar(32))))
+        // return this.characterPos_w.distance(newCharacterPos) < 32;
+        //.add(Vector2d.fromScalar(16))
         const tl = newCharacterPos.add(Vector2d.fromScalar(8));
         const br = newCharacterPos.add(Vector2d.fromScalar(8)).add(Vector2d.fromScalar(16));
         return this.boundRect().overlaps(new Rect(tl, br));
