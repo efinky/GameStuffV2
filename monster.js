@@ -22,6 +22,7 @@ export class Monster extends Character {
         this.goalPosition = characterPos_w;
         /**@type {Vector2d[] | []} */
         this.path = [];
+        this.pathTimer = 0;
     }
 //incorcorate speed into astar pathing
 //monsters need goals

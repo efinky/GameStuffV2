@@ -340,6 +340,27 @@ export class Map {
     }
 
     /**
+     * @param {Vector2d} pos
+     * @param {number} layer
+     * @param {Vector2d[]} [obstacles]
+     */
+    visitableNeighbors(pos, layer, obstacles = []) {
+        const startTile = this.worldToTile(pos).floor();
+        const obstacleTiles = obstacles.map((pos) => this.worldToTile(pos).floor());
+        const neighbors = this.neighbors(startTile, layer)
+            .filter((neighbor) => 
+                !obstacleTiles.some((obstacle) => {
+                    let match = obstacle.equal(neighbor.coord);
+                    // if (match) {
+                    //     console.log("obstacle", obstacle, neighbor.coord);
+                    // }
+                    return match;
+                })).map((neighbor) => this.tileToWorld(neighbor.coord));
+
+        return neighbors;
+    }
+
+    /**
      * 
      * @param {Vector2d} start 
      * @param {Vector2d} end 
@@ -354,9 +375,9 @@ export class Map {
             .filter((neighbor) => 
                 !obstacleTiles.some((obstacle) => {
                     let match = obstacle.equal(neighbor.coord);
-                    if (match) {
-                        console.log("obstacle", obstacle, neighbor.coord);
-                    }
+                    // if (match) {
+                    //     console.log("obstacle", obstacle, neighbor.coord);
+                    // }
                     return match;
                 })));
         if (path.length > 0) {

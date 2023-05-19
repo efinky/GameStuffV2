@@ -56,7 +56,7 @@ function reconstruct_path(came_from, current) {
  * @returns {Vector2d[]}
  */
 export function aStar(start, goal, neighbors, heuristic = (s, g) => s.distance(g), max_iterations = 200) {
-  console.log("aStar", start, goal);
+  // console.log("aStar", start, goal);
   /** @type {VectorMap<Vector2d>} */
   const came_from = new VectorMap();
   /** @type {VectorMap<number>} */
