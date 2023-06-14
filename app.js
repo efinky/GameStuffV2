@@ -2,7 +2,7 @@
 
 import { Vector2d } from "./vector2d.js"
 import { Rect } from "./rect.js"
-import { Map } from "./map.js";
+import { WorldMap } from "./worldMap.js";
 import { PlayerSet as CharacterSet } from "./playerSet.js";
 import { Inventory } from "./inventory.js"
 import { WorldState } from "./worldState.js"
@@ -58,10 +58,10 @@ function getCanvasMousePos(mouseEvent) {
 
 
 export async function run() {
-    let mapCurrent = await Map.load("BasicMap.json");
+    let mapCurrent = await WorldMap.load("BasicMap.json");
     let playerSet = await CharacterSet.load("Player.json");
     let monsterSet = await CharacterSet.load("Monsters.json");
-    let worldState = new WorldState(mapCurrent, playerSet, monsterSet);
+    let worldState = new WorldState();
     Events.setWorldState(worldState);
     /** @type {{[key: number]: boolean}} */
     let keystate = [];
@@ -83,7 +83,7 @@ export async function run() {
         if (event.key == "i") {
             inventory.toggleVisibility();
         } else if (event.key == "g") {
-            Events.dispatch(Events.PickupItem);
+            Events.dispatch(Events.PickupItem(mapCurrent));
         }else if (event.key == "a") {
             //find direction player is facing
             //get bounding box for where character is facing

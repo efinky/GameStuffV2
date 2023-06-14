@@ -2,7 +2,7 @@ import { Character } from "./character.js";
 import { Monster } from "./monster.js";
 import { Player } from "./player.js";
 import { Vector2d } from "./vector2d.js";
-import { Map } from "./map.js";
+import { WorldMap } from "./worldMap.js";
 
 /**
  * @param {Player} player
@@ -41,7 +41,7 @@ export function playerAttack(time, player, characters) {
 
 /**
  * @param {number} dt
- * @param {Map} map
+ * @param {WorldMap} map
  * @param {Character} myCharacter
  * @param {Character[]} characters
  * @return {{result: "collided", character: Character} | {result: "notWalkable"} | {result: "success", pos: Vector2d}}
@@ -139,7 +139,7 @@ function sample(arr) {
  * @param {Monster[]} monsters
  * @param {Player} player
  * @param {Character[]} characters
- * @param {Map} map
+ * @param {WorldMap} map
  */
 export function moveMonsters(dt, time, monsters, player, characters, map) {
   for (const monster of monsters) {
@@ -234,7 +234,7 @@ export function moveMonsters(dt, time, monsters, player, characters, map) {
  * @param {Player} player
  * @param {Vector2d} myVelocity
  * @param {Character[]} characters
- * @param {Map} map
+ * @param {WorldMap} map
  */
 export function movePlayer(dt, player, myVelocity, characters, map) {
   player.updateDirection(myVelocity);

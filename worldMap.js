@@ -6,7 +6,7 @@ import { Item } from "./item.js";
 import { Character } from "./character.js";
 import { aStar } from "./a-star.js";
 
-export class Map {
+export class WorldMap {
     /**
   * @param {string} path
   */
@@ -24,7 +24,7 @@ export class Map {
 
         // { [key: string]: TileSet}
 
-        return new Map(data, loadedTilesets);
+        return new WorldMap(data, loadedTilesets);
 
     }
     /**
