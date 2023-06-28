@@ -6,6 +6,7 @@ import { Vector2d } from "./vector2d.js"
 import { Serializer } from "./serializer.js"
 import { Item } from "./item.js";
 
+const serializer = new Serializer([WorldMap, Player, Monster, Vector2d]);
 
 export class WorldState {
     /**
@@ -53,8 +54,17 @@ export class WorldState {
         return {mapCurrent, playerSet, monsterSet, itemImages};
     }
 
-    toJson() {
-        return JSON.stringify({
+    /**
+     * @param {string} json
+     */
+    static fromJSON(json) {
+        const obj = serializer.parse(json);
+        Object.setPrototypeOf(obj, WorldState.prototype);
+        return obj;
+    }
+
+    toJSON() {
+        return serializer.stringify({
             map: this.map,
             player: this.player,
             monsters: this.monsters,

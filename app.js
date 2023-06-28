@@ -10,13 +10,17 @@ import * as Events from "./events.js";
 import { drawCharacterHealthBars } from "./drawAttack.js";
 import { moveMonsters, movePlayer } from "./movement.js";
 import { Player } from "./player.js";
+import { Server } from "./lib/networking/server.js";
+import { connect, listen } from "./lib/webrtc/webrtc-sockets.js";
+import { Client } from "./lib/networking/client.js";
+import { Serializer } from "./serializer.js";
+import { Monster } from "./monster.js";
 
 
 /** @typedef {import("./tiledLoader.js").ItemProperty} ItemProperty */
 /** @typedef {import("./tiledLoader.js").EquipType} EquipType */
 /** @typedef {import("./character.js").EquippableSlot}  EquippableSlot */
 // import someData from "./test.json" assert { type: "json" };
-
 
 /*
 
@@ -62,6 +66,28 @@ export async function run() {
     let assets = await worldState.loadAssets();
     // worldState.initItems(assets.mapCurrent);
     Events.setWorldState(worldState);
+
+    const url = new URL(document.URL);
+    const hash = decodeURIComponent(url.hash.slice(1));
+    if (hash !== "") {
+        console.log("hash", hash);
+        if (hash === "host") {
+            const { token, start: startListen } = await listen();
+            const server = Server.init({ getState: () => worldState });
+            const { stop } = await startListen({
+              onConnect: (channel) => server.onConnect(channel),
+            });
+            // set the hash to the token so that clients can connect
+            url.hash = encodeURIComponent(token);
+        } else {
+            const token = decodeURIComponent(hash);
+            let channel = await connect(token);
+            const { client, clientId, state: s } = await Client.init(channel);
+            worldState = WorldState.fromJSON(s);
+        }
+    }
+
+
     /** @type {{[key: number]: boolean}} */
     let keystate = [];
     let timestamp = performance.now();
