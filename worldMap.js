@@ -204,6 +204,61 @@ export class WorldMap {
         }
         return null;
     }
+
+    getAllItems() {
+        /** @type {{[idx: number]: Item}} */
+        let items = {};
+        let layer = 1;
+        for (let y = 0; y < this.map.height; y++) {
+            for (let x = 0; x < this.map.width; x++) {
+                const linearCoord = x + y * this.map.width;
+                let tileNumber = 0;
+                if (this.map.layers[layer].data[linearCoord]) {
+                    tileNumber = this.map.layers[layer].data[linearCoord];
+                    this.map.layers[layer].data[linearCoord] = 0;
+                    let item = this.getItemByTileNumber(tileNumber);
+                    if (item) {
+                        items[linearCoord] = item;
+                    }
+                }
+            }
+        }
+        return items;
+    }
+
+    /**
+     * 
+     * @param {Vector2d} pos_w 
+     * @returns {number}
+     */
+    getLinearCoord(pos_w) {
+        // definitely need to use round here instead of floor or ceil
+        const pos_t = this.worldToTile(pos_w).round();
+        return pos_t.x + pos_t.y * this.map.width;
+    }
+
+    /**
+     * @param {number} linearCoord
+     */
+    tileCoordFromLinearCoord(linearCoord) {
+        let x = linearCoord % this.map.width;
+        let y = Math.floor(linearCoord / this.map.width);
+        return new Vector2d(x, y);
+    }
+
+    /**
+     * @param {number} tileNumber
+     */
+    itemImageFromTileNumber(tileNumber) {
+        let [tileset, number] = this.getTilesetAndNumber(tileNumber);
+        let itemTile = tileset.tileset.tiles[number];
+        if (itemTile.type != "Item") {
+            return null;
+        }
+        let image = tileset.imageElement(number);
+        return image;
+    }
+
     /**
      *
      * @param {number} tileNumber
@@ -219,9 +274,7 @@ export class WorldMap {
         let name = itemTile.properties.name;
         let properties = itemTile.properties;
 
-        let image = tileset.imageElement(number);
-
-        return new Item(name, image, tileNumber, properties);
+        return new Item(name, tileNumber, properties);
     }
     /**
      *
@@ -254,14 +307,17 @@ export class WorldMap {
      *
      * @param {number} tileNumber
      * @param {CanvasRenderingContext2D} ctx
-     * @param {Vector2d} dest
+     * @param {Vector2d} tileCoord
+     * @param {Vector2d} viewportOrigin_w
      * @returns
      */
-    drawTile(tileNumber, ctx, dest) {
+    drawTile(tileNumber, ctx, tileCoord, viewportOrigin_w) {
         if (tileNumber == 0) {
             // empty tile
             return;
         }
+        let tileSize = new Vector2d(this.map.tilewidth, this.map.tileheight);
+        const dest = tileCoord.mul(tileSize).sub(viewportOrigin_w);
         let [tileset, number] = this.getTilesetAndNumber(tileNumber);
         tileset.drawTile(number, ctx, dest);
     }
@@ -406,7 +462,7 @@ export class WorldMap {
     draw(ctx, viewportOrigin_w, canvasSize) {
 
         let mapSize = new Vector2d(this.map.width, this.map.height);
-        let tileSize = new Vector2d(this.map.tilewidth, this.map.tileheight);
+        
         let mapTileRect = new Rect(new Vector2d(0, 0), mapSize);
         // image to draw from
         {
@@ -421,12 +477,12 @@ export class WorldMap {
 
                 // TODO JDV foreach layer?
                 // size of tile
-                const dest = tileCoord.mul(tileSize).sub(viewportOrigin_w);
+                
                 // loop once for each layer
                 for (let i = 0; i < this.map.layers.length; i++) {
                     const tileNumber = this.tileNumber(tileCoord, i);
                     if (tileNumber != null) {
-                        this.drawTile(tileNumber, ctx, dest);
+                        this.drawTile(tileNumber, ctx, tileCoord, viewportOrigin_w);
                     }
                 }
 

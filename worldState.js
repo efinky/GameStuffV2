@@ -4,11 +4,15 @@ import { Player } from "./player.js"
 import { Monster } from "./monster.js"
 import { Vector2d } from "./vector2d.js"
 import { Serializer } from "./serializer.js"
+import { Item } from "./item.js";
 
 
 export class WorldState {
-    constructor() {
-
+    /**
+     * @param {string} map
+     */
+    constructor(map) {
+        this.map = map;
         this.player = new Player("Bob", "Warrior", new Vector2d(900, 900));
         /** @type {Monster[]} */
         this.monsters = [];
@@ -18,27 +22,45 @@ export class WorldState {
         this.monsters.push(new Monster("bob3", "Goblin", new Vector2d((Math.random() * 1000)+1000, (Math.random() * 1000)+1000)));
         this.monsters.push(new Monster("bob4", "Goblin", new Vector2d((Math.random() * 1000)+1000, (Math.random() * 1000)+1000)));
         this.time = 0;
-        // this.toJson();
-        let serializer = new Serializer([WorldState, WorldMap, Player, Monster, Vector2d]);
-        const jsony = serializer.stringify(this);
+        /** @type {{[idx: number]: Item}} */
+        this.items = [];
+        // let serializer = new Serializer([WorldState, WorldMap, Player, Monster, Vector2d]);
+        // const jsony = serializer.stringify(this);
         
-        console.log("state:", jsony);    
+        // console.log("state:", jsony);    
     }
-    //"map":{"compressionlevel":-1,"height":100,"infinite":false,"layers":[{"data":[289,289,289,289,289,289,289,289,289,289,289,289,289,289,289,289,292,295,289,28
 
     characters() {
         return [...this.monsters, this.player];
     }
 
-    // toJson() {
-    //     let serializer = new Serializer([WorldState]);
-    //     // let jsony = "state : {"
-    //     // console.log("json");
-    //     // const jsony = JSON.stringify(this);
-    //     const jsony = serializer.stringify(this);
-        
-    //     console.log("state:", jsony);
+    async loadAssets() {
+        let mapCurrent = await WorldMap.load(this.map);
 
-    // }
+        this.items = mapCurrent.getAllItems();
+
+        /** @type {{[idx: number]: HTMLImageElement}} */
+        let itemImages = [];
+        for (let item of Object.values(this.items)) {
+            const itemImage = mapCurrent.itemImageFromTileNumber(item.tileNumber);
+            if (itemImage) {
+                itemImages[item.tileNumber] = itemImage;
+            }
+        }
+
+        let playerSet = await CharacterSet.load("Player.json");
+        let monsterSet = await CharacterSet.load("Monsters.json");
+        return {mapCurrent, playerSet, monsterSet, itemImages};
+    }
+
+    toJson() {
+        return JSON.stringify({
+            map: this.map,
+            player: this.player,
+            monsters: this.monsters,
+            time: this.time
+        });
+    }
+
 }
 

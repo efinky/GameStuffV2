@@ -58,10 +58,9 @@ function getCanvasMousePos(mouseEvent) {
 
 
 export async function run() {
-    let mapCurrent = await WorldMap.load("BasicMap.json");
-    let playerSet = await CharacterSet.load("Player.json");
-    let monsterSet = await CharacterSet.load("Monsters.json");
-    let worldState = new WorldState();
+    let worldState = new WorldState("BasicMap.json");
+    let assets = await worldState.loadAssets();
+    // worldState.initItems(assets.mapCurrent);
     Events.setWorldState(worldState);
     /** @type {{[key: number]: boolean}} */
     let keystate = [];
@@ -69,7 +68,7 @@ export async function run() {
     /** @type {Vector2d | null} */
     let moveTarget = null;
 
-    let inventory = new Inventory(getElement("inventoryBox"), worldState.player);
+    let inventory = new Inventory(getElement("inventoryBox"), worldState.player, assets.itemImages);
 
     let canvas = document.getElementById('canvas');
     if (!(canvas instanceof HTMLCanvasElement)) {
@@ -83,7 +82,7 @@ export async function run() {
         if (event.key == "i") {
             inventory.toggleVisibility();
         } else if (event.key == "g") {
-            Events.dispatch(Events.PickupItem(mapCurrent));
+            Events.dispatch(Events.PickupItem(assets.mapCurrent));
         }else if (event.key == "a") {
             //find direction player is facing
             //get bounding box for where character is facing
@@ -115,13 +114,13 @@ export async function run() {
         } else if (event.button == 2) {
             const cPos = getCanvasMousePos(event);
             if (cPos && canvas instanceof HTMLCanvasElement) {
-                let tileSize = mapCurrent.tileSize();
-                let mapSize = mapCurrent.size().mul(tileSize);
+                let tileSize = assets.mapCurrent.tileSize();
+                let mapSize = assets.mapCurrent.size().mul(tileSize);
                 let canvasSize = new Vector2d(canvas.width, canvas.height);
                 let mapRect = new Rect(new Vector2d(0, 0), mapSize.sub(canvasSize));
                 let viewportOrigin_w = worldState.player.characterPos_w.sub(canvasSize.scale(0.5)).clamp(mapRect);
                 worldState.player.setDebugPathTarget(cPos.add(viewportOrigin_w));
-                // const debugPath = mapCurrent.findPath(worldState.player.characterPos_w, cPos.add(viewportOrigin_w), 0);
+                // const debugPath = assets.mapCurrent.findPath(worldState.player.characterPos_w, cPos.add(viewportOrigin_w), 0);
                 // worldState.player.debugPath = debugPath;
             }
             event.stopPropagation();
@@ -191,9 +190,9 @@ export async function run() {
         if (!ctx) {
             return null;
         }
-        let tileSize = mapCurrent.tileSize();
+        let tileSize = assets.mapCurrent.tileSize();
 
-        let mapSize = mapCurrent.size().mul(tileSize);
+        let mapSize = assets.mapCurrent.size().mul(tileSize);
         let canvasSize = new Vector2d(canvas.width, canvas.height);
         let mapRect = new Rect(new Vector2d(0, 0), mapSize.sub(canvasSize));
 
@@ -210,7 +209,7 @@ export async function run() {
 
 
 
-        let speed = mapCurrent.getTileSpeed(worldState.player.characterPos_w, 0);
+        let speed = assets.mapCurrent.getTileSpeed(worldState.player.characterPos_w, 0);
         // Draw Person
         //ctx.drawImage(playerImage, ...player.characterPos_w.sub(viewportOrigin_w).arr());
 
@@ -234,32 +233,41 @@ export async function run() {
         }
 
         if (moveTarget) {
-            let wTarget = mapCurrent.viewportToWorld(moveTarget, viewportOrigin_w);
+            let wTarget = assets.mapCurrent.viewportToWorld(moveTarget, viewportOrigin_w);
             myVelocity = wTarget.sub(worldState.player.characterPos_w).normalize();
         }
 
 
         const characters = worldState.characters();
 
-        moveMonsters(dt, worldState.time, worldState.monsters, worldState.player, characters, mapCurrent);
+        moveMonsters(dt, worldState.time, worldState.monsters, worldState.player, characters, assets.mapCurrent);
 
-        movePlayer(dt, worldState.player, myVelocity, characters, mapCurrent);
+        movePlayer(dt, worldState.player, myVelocity, characters, assets.mapCurrent);
         
         characters.sort((a, b) => {
             return a.characterPos_w.y - b.characterPos_w.y;
         });
         
 
-        mapCurrent.draw(ctx, viewportOrigin_w, canvasSize);
+        assets.mapCurrent.draw(ctx, viewportOrigin_w, canvasSize);
+
+        // draw item images from state
+        for (const linearCoord of (Object.keys(worldState.items).map(Number))) {
+            const item = worldState.items[linearCoord];
+            const tileCoord = assets.mapCurrent.tileCoordFromLinearCoord(linearCoord);
+            let itemImage = assets.itemImages[item.tileNumber];
+            assets.mapCurrent.drawTile(item.tileNumber, ctx, tileCoord, viewportOrigin_w);
+        }
+
         for (const character of characters) {
             if (character instanceof Player) {
-                let playerImageId = playerSet.getPlayerImageId(worldState.player.class, worldState.player.direction, worldState.player.step);
-                playerSet.draw(playerImageId, ctx, worldState.player.characterPos_w.sub(viewportOrigin_w));
+                let playerImageId = assets.playerSet.getPlayerImageId(worldState.player.class, worldState.player.direction, worldState.player.step);
+                assets.playerSet.draw(playerImageId, ctx, worldState.player.characterPos_w.sub(viewportOrigin_w));
         
             }
             else {
-                let monsterImageId = monsterSet.getPlayerImageId(character.class, character.direction, character.step);
-                monsterSet.draw(monsterImageId, ctx, character.characterPos_w.sub(viewportOrigin_w));
+                let monsterImageId = assets.monsterSet.getPlayerImageId(character.class, character.direction, character.step);
+                assets.monsterSet.draw(monsterImageId, ctx, character.characterPos_w.sub(viewportOrigin_w));
                 //draw monster path:
                 if (character.path) {
                     ctx.strokeStyle = "red";

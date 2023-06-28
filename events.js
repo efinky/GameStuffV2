@@ -1,6 +1,7 @@
 import { Character } from "./character.js";
 import { Monster } from "./monster.js";
 import { playerAttack } from "./movement.js";
+import { WorldMap } from "./worldMap.js";
 import { WorldState } from "./worldState.js";
 /** @typedef {{eventType: "monsterDied", monster: Monster}} WorldEvent */
 
@@ -9,40 +10,42 @@ import { WorldState } from "./worldState.js";
 /**  @type {WorldState} */
 let worldState;
 
-
-
-/** @param {WorldState} state */
-export const PickupItem = (state) => {
-    let item = state.mapCurrent.getItem(state.player.characterPos_w);
-    if (item) {
-        state.player.inventory.push(item);
-    }
-}
+/** 
+ @param {WorldMap}  map
+ @return {(state: WorldState) => void } */
+export const PickupItem = (map) => (state) => {
+  const coord = map.getLinearCoord(state.player.characterPos_w);
+  console.log("PickupItem", coord);
+  let item = state.items[coord];
+  if (item) {
+    delete state.items[coord];
+    state.player.inventory.push(item);
+  }
+};
 /**
- * 
+ *
  * @param {WorldState} state
  */
 export const PlayerAttack = (state) => {
   /**@type {Character | null} */
   let deadMonster = playerAttack(state.time, state.player, state.monsters);
   if (deadMonster) {
-    MonsterDeath(deadMonster)(state)
+    MonsterDeath(deadMonster)(state);
   }
-}
+};
 /**
- * 
+ *
  * @type {(monster: Character) => ((state: WorldState) => void)}
  */
 export const MonsterDeath = (monster) => (state) => {
   state.monsters = state.monsters.filter((e) => e !== monster);
-}
+};
 
 //dispatch(MonsterDeath(monster))
 
-
 /**
- * 
- * @param {WorldState} ws 
+ *
+ * @param {WorldState} ws
  */
 export function setWorldState(ws) {
   worldState = ws;

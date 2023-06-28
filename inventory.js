@@ -79,12 +79,14 @@ export class Inventory {
     /**
      * @param { HTMLElement } inventoryBox
      *  @param {Player} player 
+     * @param {{[idx: number]: HTMLImageElement}} images
      */
-    constructor(inventoryBox, player) {
+    constructor(inventoryBox, player, images) {
         this.inventoryBox = inventoryBox;
         this.player = player;
         /** @type {DraggedItem | null} */
         this.draggedItem = null;
+        this.images = images;
         this.init();
     }
 
@@ -137,7 +139,7 @@ export class Inventory {
             this.inventoryBox.removeChild(this.inventoryBox.lastChild);
         }
         this.player.inventory.forEach(i => {
-            let x = i.image.cloneNode(false);
+            let x = this.images[i.tileNumber].cloneNode(false);
             if (!(x instanceof HTMLElement)) {
                 console.log("Not an element: ", x);
                 return;
@@ -172,7 +174,7 @@ export class Inventory {
             }
             let i = this.player.equipped[equipSlots[slot]];
             if (i) {
-                let x = i.image.cloneNode(false);
+                let x = this.images[i.tileNumber].cloneNode(false);
                 if (!(x instanceof HTMLElement)) {
                     console.log("Not an element: ", x);
                     return;
