@@ -22,6 +22,13 @@ import { Monster } from "./monster.js";
 /** @typedef {import("./character.js").EquippableSlot}  EquippableSlot */
 // import someData from "./test.json" assert { type: "json" };
 
+/**
+ * @template E
+ * @typedef {import("./lib/networking/simulation.js").SimChunk<E>} SimChunk<E>
+ */
+
+/** @typedef {{ move: number; }} PlayerAction */
+
 /*
 
 
@@ -63,12 +70,12 @@ function getCanvasMousePos(mouseEvent) {
 
 export async function run() {
     let worldState = new WorldState("BasicMap.json");
-    let assets = await worldState.loadAssets();
+    
     // worldState.initItems(assets.mapCurrent);
-    Events.setWorldState(worldState);
 
     const url = new URL(document.URL);
     const hash = decodeURIComponent(url.hash.slice(1));
+    let networkHandler;
     if (hash !== "") {
         console.log("hash", hash);
         if (hash === "host") {
@@ -79,13 +86,23 @@ export async function run() {
             });
             // set the hash to the token so that clients can connect
             url.hash = encodeURIComponent(token);
+            history.replaceState(null, "", url.toString());
+            networkHandler = server;
         } else {
             const token = decodeURIComponent(hash);
             let channel = await connect(token);
             const { client, clientId, state: s } = await Client.init(channel);
+            
             worldState = WorldState.fromJSON(s);
+            console.log("WorldState:", worldState);
+            networkHandler = client;
+
         }
     }
+
+    let assets = await worldState.loadAssets();
+    Events.setWorldState(worldState);
+
 
 
     /** @type {{[key: number]: boolean}} */
@@ -189,7 +206,15 @@ export async function run() {
 
 
 
+    function onFrame(now) {
+        networkHandler.getEvents().forEach((event) => {
 
+        });
+
+        draw(now);
+        window.requestAnimationFrame(onFrame);
+
+    }
 
     //haha I am in your codes!
 

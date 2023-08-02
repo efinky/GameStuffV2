@@ -53,7 +53,7 @@ function moveCharacter(dt, map, myCharacter, characters) {
 
   let speed = map.getTileSpeed(pos_w, 0);
   velocity = velocity.scale(speed * speedMultiplier * dt);
-
+  //console.log("velocity, ", velocity);
   if (myCharacter instanceof Monster) {
     for (let character of characters) {
       if (myCharacter === character) {
@@ -138,8 +138,8 @@ export function moveMonsters(dt, time, monsters, player, characters, map) {
       .map((m) => m.characterPos_w);
 
     monster.ifStuck();
+
     //if monster is 1 and a half tiles away from character
-    
     if (monster.characterPos_w.distance(player.characterPos_w) < 30) {
         monster.path = [player.characterPos_w];
         let nextPos = monster.path[0];
