@@ -127,18 +127,20 @@ function sample(arr) {
  * @param {number} dt
  * @param {number} time
  * @param {Monster[]} monsters
- * @param {Player} player
+ * @param {{ [key: string]: Player }} players
  * @param {Character[]} characters
  * @param {WorldMap} map
  */
-export function moveMonsters(dt, time, monsters, player, characters, map) {
+export function moveMonsters(dt, time, monsters, players, characters, map) {
   for (const monster of monsters) {
     const nearbyMonsters = monsters
       .filter((m) => m.characterPos_w.distance(monster.characterPos_w) < 32 * 3)
       .map((m) => m.characterPos_w);
 
     monster.ifStuck();
-
+    for (let key in players) {
+      let player = players[key];
+      
     //if monster is 1 and a half tiles away from character
     if (monster.characterPos_w.distance(player.characterPos_w) < 30) {
         monster.path = [player.characterPos_w];
@@ -188,6 +190,7 @@ export function moveMonsters(dt, time, monsters, player, characters, map) {
           nearbyMonsters
         );
       }
+      
 
       //monster.myVelocity = monster.characterPos_w.directionTo(player.characterPos_w);
       if (monster.path.length > 0) {
@@ -221,6 +224,8 @@ export function moveMonsters(dt, time, monsters, player, characters, map) {
         }
       }
     }
+    
+  });
     // monster.timeToMove(player.characterPos_w);
     const moveResult = moveCharacter(dt, map, monster, characters);
     //console.log(moveResult);

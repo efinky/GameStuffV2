@@ -6,6 +6,8 @@ import { Vector2d } from "./vector2d.js"
 import { Serializer } from "./serializer.js"
 import { Item } from "./item.js";
 
+/** @typedef {import("./app.js").SimChunk} SimChunk */
+
 const serializer = new Serializer([WorldMap, Player, Monster, Vector2d]);
 
 export class WorldState {
@@ -14,7 +16,8 @@ export class WorldState {
      */
     constructor(map) {
         this.map = map;
-        this.player = new Player("Bob", "Warrior", new Vector2d(900, 900));
+        /** @type {{[key: string]: Player}} */
+        this.players = {};
         /** @type {Monster[]} */
         this.monsters = [];
         this.monsters.push(new Monster("bob", "Goblin", new Vector2d(1100, 1100)));
@@ -32,7 +35,24 @@ export class WorldState {
     }
 
     characters() {
-        return [...this.monsters, this.player];
+        let playerArray = []
+        for (let key in this.players) {
+            playerArray.push(this.players[key])
+        }
+        return [...this.monsters, ...playerArray];
+    }
+    /**
+     * 
+     * @param {string} clientId 
+     */
+    playerConnected(clientId) {
+        if (!this.players[clientId]) {
+            this.players[clientId] = new Player("Bob", "Warrior", new Vector2d(900, 900));
+            console.log("player added");
+        }
+        else {
+            console.log("player " + clientId + " has rejoined the game");
+        }
     }
 
     async loadAssets() {
@@ -54,6 +74,47 @@ export class WorldState {
         return {mapCurrent, playerSet, monsterSet, itemImages};
     }
 
+    update(dt) {
+        this.time += dt;
+        moveMonsters(
+            dt,
+            this.time,
+            this.monsters,
+            this.players,
+            this.characters(),
+            assets.mapCurrent
+        );
+
+        movePlayer(
+            dt,
+            this.players,
+            myVelocity,
+            this.characters(),
+            assets.mapCurrent
+        );
+    }
+
+    /** @param {SimChunk} chunk */
+    processChunk(chunk) {
+        const { peerEvents, dt } = chunk;
+        for (const event of peerEvents) {
+        switch (event.msg.type) {
+            case "peerJoined":
+            this.playerConnected(event.clientId);
+            break;
+            case "peerLeft":
+            
+            break;
+            case "peerEvent":
+                if (event.msg.type === "moveTarget") {
+                    
+                }
+            break;
+        }
+        }
+        this.update(dt / 1000);
+    }
+
     /**
      * @param {string} json
      */
@@ -66,7 +127,7 @@ export class WorldState {
     toJSON() {
         return serializer.stringify({
             map: this.map,
-            player: this.player,
+            players: this.players,
             monsters: this.monsters,
             time: this.time
         });
