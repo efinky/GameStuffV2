@@ -5,10 +5,13 @@ import { Monster } from "./monster.js"
 import { Vector2d } from "./vector2d.js"
 import { Serializer } from "./serializer.js"
 import { Item } from "./item.js";
+import { moveMonsters, movePlayer, playerAttack } from "./movement.js";
+import { Character } from "./character.js";
 
 /** @typedef {import("./app.js").SimChunk} SimChunk */
 
-const serializer = new Serializer([WorldMap, Player, Monster, Vector2d]);
+
+export const serializer = new Serializer([WorldMap, Player, Monster, Vector2d]);
 
 export class WorldState {
     /**
@@ -47,7 +50,7 @@ export class WorldState {
      */
     playerConnected(clientId) {
         if (!this.players[clientId]) {
-            this.players[clientId] = new Player("Bob", "Warrior", new Vector2d(900, 900));
+            this.players[clientId] = new Player("Bob", "Warrior", new Vector2d(900, 900), clientId);
             console.log("player added");
         }
         else {
@@ -74,7 +77,11 @@ export class WorldState {
         return {mapCurrent, playerSet, monsterSet, itemImages};
     }
 
-    update(dt) {
+    /** 
+    @param {number} dt
+    @param {WorldMap} map
+     */
+    update(dt, map) {
         this.time += dt;
         moveMonsters(
             dt,
@@ -82,20 +89,43 @@ export class WorldState {
             this.monsters,
             this.players,
             this.characters(),
-            assets.mapCurrent
+            map
         );
 
         movePlayer(
             dt,
             this.players,
-            myVelocity,
             this.characters(),
-            assets.mapCurrent
+            map
         );
     }
 
-    /** @param {SimChunk} chunk */
-    processChunk(chunk) {
+    /**
+        * @param {Character} monster
+     */
+    monsterDeath(monster) {
+        this.monsters = this.monsters.filter((e) => e !== monster);
+    }
+
+
+    /**
+        * @param {string} clientId
+    */
+
+    playerAttack(clientId) {
+        const player = this.players[clientId]
+        let deadMonster = playerAttack(this.time, player, this.monsters);
+        if (deadMonster) {
+            this.monsterDeath(deadMonster);
+        }
+    }
+
+
+    /** 
+    @param {SimChunk} chunk
+    @param {WorldMap} map
+     */
+    processChunk(chunk, map) {
         const { peerEvents, dt } = chunk;
         for (const event of peerEvents) {
         switch (event.msg.type) {
@@ -106,13 +136,19 @@ export class WorldState {
             
             break;
             case "peerEvent":
-                if (event.msg.type === "moveTarget") {
-                    
+                if (event.msg.peerEvent.type === "moveTarget") {
+                    const clientId = event.clientId;
+                    // Add move target onto player
+                    this.players[clientId].setMoveTarget(event.msg.peerEvent.moveTarget)
+                }
+                if (event.msg.peerEvent.type === "attack") {
+                    const clientId = event.clientId;
+                    this.playerAttack(clientId);
                 }
             break;
         }
         }
-        this.update(dt / 1000);
+        this.update(dt / 1000, map);
     }
 
     /**
@@ -134,4 +170,16 @@ export class WorldState {
     }
 
 }
+
+/** @typedef {Awaited<ReturnType<typeof WorldState.prototype.loadAssets>>} Assets */
+// // Typedef of the return type of loadAssets
+// /**
+//     * @typedef {Object} Assets
+//     * @property {WorldMap} mapCurrent
+//     * @property {CharacterSet} playerSet
+//     * @property {CharacterSet} monsterSet
+//     * @property {HTMLImageElement[]} itemImages
+//     */
+
+
 

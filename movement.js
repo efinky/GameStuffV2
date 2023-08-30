@@ -140,9 +140,9 @@ export function moveMonsters(dt, time, monsters, players, characters, map) {
     monster.ifStuck();
     for (let key in players) {
       let player = players[key];
-      
-    //if monster is 1 and a half tiles away from character
-    if (monster.characterPos_w.distance(player.characterPos_w) < 30) {
+
+      //if monster is 1 and a half tiles away from character
+      if (monster.characterPos_w.distance(player.characterPos_w) < 30) {
         monster.path = [player.characterPos_w];
         let nextPos = monster.path[0];
         monster.myVelocity = monster.characterPos_w.directionTo(nextPos);
@@ -154,78 +154,75 @@ export function moveMonsters(dt, time, monsters, players, characters, map) {
           // ATTACK!
           let died = monster.attack(time, player);
           if (died) console.log("DEAD!");
-        } 
-    }
-    else if (monster.characterPos_w.distance(player.characterPos_w) < 300) {
-      if (time > monster.pathTimer) {
-        //   if (
-        //     monster.path.length > 0 &&
-        //     monster.path[monster.path.length - 1].distance(player.characterPos_w) >
-        //       36.0
-        //   ) {
-        let targets = map.visitableNeighbors(
-          player.characterPos_w,
-          0,
-          nearbyMonsters
-        );
-        if (targets.length > 0) {
-          let target = sample(targets);
+        }
+      } else if (monster.characterPos_w.distance(player.characterPos_w) < 300) {
+        if (time > monster.pathTimer) {
+          //   if (
+          //     monster.path.length > 0 &&
+          //     monster.path[monster.path.length - 1].distance(player.characterPos_w) >
+          //       36.0
+          //   ) {
+          let targets = map.visitableNeighbors(
+            player.characterPos_w,
+            0,
+            nearbyMonsters
+          );
+          if (targets.length > 0) {
+            let target = sample(targets);
+            monster.path = map.findPath(
+              monster.characterPos_w,
+              target,
+              0,
+              nearbyMonsters
+            );
+          }
+          monster.pathTimer = time + 0.1;
+          // console.log("PATH: ", monster.path);
+          // console.log("Distance", monster.path[monster.path.length -1].distance(player.characterPos_w));
+        }
+
+        if (monster.path.length == 0) {
           monster.path = map.findPath(
             monster.characterPos_w,
-            target,
+            player.characterPos_w,
             0,
             nearbyMonsters
           );
         }
-        monster.pathTimer = time + 0.1;
-        // console.log("PATH: ", monster.path);
-        // console.log("Distance", monster.path[monster.path.length -1].distance(player.characterPos_w));
-      }
 
-      if (monster.path.length == 0) {
-        monster.path = map.findPath(
-          monster.characterPos_w,
-          player.characterPos_w,
-          0,
-          nearbyMonsters
-        );
-      }
-      
-
-      //monster.myVelocity = monster.characterPos_w.directionTo(player.characterPos_w);
-      if (monster.path.length > 0) {
-        let nextPos = monster.path[0];
-        //nextPos.add(new Vector2d(16,16));
-        monster.myVelocity = monster.characterPos_w.directionTo(nextPos);
-        // monster.myVelocity.clipTo(monster.characterPos_w.distance(nextPos)*dt/32.0)
-        if (monster.characterPos_w.distance(nextPos) <= 1.0) {
-          monster.path.shift();
+        //monster.myVelocity = monster.characterPos_w.directionTo(player.characterPos_w);
+        if (monster.path.length > 0) {
+          let nextPos = monster.path[0];
+          //nextPos.add(new Vector2d(16,16));
+          monster.myVelocity = monster.characterPos_w.directionTo(nextPos);
+          // monster.myVelocity.clipTo(monster.characterPos_w.distance(nextPos)*dt/32.0)
+          if (monster.characterPos_w.distance(nextPos) <= 1.0) {
+            monster.path.shift();
+          }
+        }
+      } else {
+        if (
+          monster.characterPos_w.distance(monster.goalPosition) < 10.0 ||
+          monster.path.length == 0
+        ) {
+          monster.goalPosition = monster.findRandomGoal(monster.characterPos_w);
+          monster.path = map.findPath(
+            monster.characterPos_w,
+            monster.goalPosition,
+            0,
+            nearbyMonsters
+          );
+        }
+        if (monster.path.length > 0) {
+          let nextPos = monster.path[0];
+          monster.myVelocity = monster.characterPos_w.directionTo(nextPos);
+          monster.myVelocity.clipTo(monster.characterPos_w.distance(nextPos));
+          if (monster.characterPos_w.distance(nextPos) < 10.0) {
+            monster.path.shift();
+          }
         }
       }
-    } else {
-      if (
-        monster.characterPos_w.distance(monster.goalPosition) < 10.0 ||
-        monster.path.length == 0
-      ) {
-        monster.goalPosition = monster.findRandomGoal(monster.characterPos_w);
-        monster.path = map.findPath(
-          monster.characterPos_w,
-          monster.goalPosition,
-          0,
-          nearbyMonsters
-        );
-      }
-      if (monster.path.length > 0) {
-        let nextPos = monster.path[0];
-        monster.myVelocity = monster.characterPos_w.directionTo(nextPos);
-        monster.myVelocity.clipTo(monster.characterPos_w.distance(nextPos));
-        if (monster.characterPos_w.distance(nextPos) < 10.0) {
-          monster.path.shift();
-        }
-      }
-    }
-    
-  });
+    } //);
     // monster.timeToMove(player.characterPos_w);
     const moveResult = moveCharacter(dt, map, monster, characters);
     //console.log(moveResult);
@@ -244,30 +241,39 @@ export function moveMonsters(dt, time, monsters, players, characters, map) {
 /**
  *
  * @param {number} dt
- * @param {Player} player
- * @param {Vector2d} myVelocity
+ * @param {{ [key: string]: Player }} players
  * @param {Character[]} characters
  * @param {WorldMap} map
  */
-export function movePlayer(dt, player, myVelocity, characters, map) {
-  player.updateDirection(myVelocity);
-  // if (player.velocity().magnitude() != 0.0) {
-  const moveResult = moveCharacter(dt, map, player, characters);
-  if (moveResult.result === "success") {
-    player.updatePosition(moveResult.pos);
-  }
-  // }
+export function movePlayer(dt, players, characters, map) {
+  for (let player of Object.values(players)) {
+    let myVelocity = Vector2d.zero();
+    if (player.moveTarget) {
+      // console.log("moveTarget", player.moveTarget);
+      // console.log("move Direction", player.moveTarget.sub(player.characterPos_w));
+      myVelocity = player.characterPos_w.directionTo(player.moveTarget); //player.moveTarget.sub(player.characterPos_w).normalize();
 
-  if (
-    player.debugPath &&
-    (player.debugPath.from.distance(player.characterPos_w) > 4.0 ||
-      player.debugPath.path == null)
-  ) {
-    player.debugPath.from = player.characterPos_w;
-    player.debugPath.path = map.findPath(
-      player.characterPos_w,
-      player.debugPath.to,
-      0
-    );
+    }
+
+    player.updateDirection(myVelocity);
+    // if (player.velocity().magnitude() != 0.0) {
+    const moveResult = moveCharacter(dt, map, player, characters);
+    if (moveResult.result === "success") {
+      player.updatePosition(moveResult.pos);
+    }
+    // }
+
+    if (
+      player.debugPath &&
+      (player.debugPath.from.distance(player.characterPos_w) > 4.0 ||
+        player.debugPath.path == null)
+    ) {
+      player.debugPath.from = player.characterPos_w;
+      player.debugPath.path = map.findPath(
+        player.characterPos_w,
+        player.debugPath.to,
+        0
+      );
+    }
   }
 }

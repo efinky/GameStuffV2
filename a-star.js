@@ -113,7 +113,7 @@ export function aStar(start, goal, neighbors, heuristic = (s, g) => s.distance(g
     iterations++;
   }
 
-  console.log("aStar failed", open_set, closed_set);
+  // console.log("aStar failed", open_set, closed_set);
 
   return [];
 }

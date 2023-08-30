@@ -18,6 +18,10 @@ export class Vector2d {
     return new Vector2d(scalar, scalar);
   }
 
+  static zero() {
+    return new Vector2d(0, 0);
+  }
+
   /** @return {[number, number]} */
   arr() {
     return [this.x, this.y];

@@ -36,7 +36,6 @@ export class Monster extends Character {
         let newx = Math.floor(Math.random() * 10) - 5;
         let newy = Math.floor(Math.random() * 10) - 5;
         let newPos = new Vector2d(newx, newy).scale(32);
-        console.log("new Pos", newPos);
         return monster_pos.add(newPos);
     }
     /**
