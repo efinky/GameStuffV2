@@ -36,6 +36,16 @@ export class Serializer {
         toJSON: (m) => [...m.values()],
         fromJSON: (values) => new Set(values),
       },
+      {
+        name: Date.name,
+        toJSON: (d) => d.getTime(),
+        fromJSON: (time) => new Date(time),
+      },
+      {
+        name: BigInt.name,
+        toJSON: (b) => b.toString(),
+        fromJSON: (str) => BigInt(str),
+      }
     ]);
   }
   /** @param {SerializableClass<T>} c */

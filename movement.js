@@ -3,6 +3,7 @@ import { Monster } from "./monster.js";
 import { Player } from "./player.js";
 import { Vector2d } from "./vector2d.js";
 import { WorldMap } from "./worldMap.js";
+import { WorldState } from "./worldState.js";
 
 /**
  * @param {Player} player
@@ -115,14 +116,6 @@ function moveCharacter(dt, map, myCharacter, characters) {
 }
 
 /**
- * @template T
- * @param {T[]} arr
- */
-function sample(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-/**
  *
  * @param {number} dt
  * @param {number} time
@@ -130,8 +123,9 @@ function sample(arr) {
  * @param {{ [key: string]: Player }} players
  * @param {Character[]} characters
  * @param {WorldMap} map
+ * @param {WorldState} worldState
  */
-export function moveMonsters(dt, time, monsters, players, characters, map) {
+export function moveMonsters(dt, time, monsters, players, characters, map, worldState) {
   for (const monster of monsters) {
     const nearbyMonsters = monsters
       .filter((m) => m.characterPos_w.distance(monster.characterPos_w) < 32 * 3)
@@ -168,7 +162,7 @@ export function moveMonsters(dt, time, monsters, players, characters, map) {
             nearbyMonsters
           );
           if (targets.length > 0) {
-            let target = sample(targets);
+            let target = worldState.rng.choose(targets);
             monster.path = map.findPath(
               monster.characterPos_w,
               target,
@@ -205,7 +199,7 @@ export function moveMonsters(dt, time, monsters, players, characters, map) {
           monster.characterPos_w.distance(monster.goalPosition) < 10.0 ||
           monster.path.length == 0
         ) {
-          monster.goalPosition = monster.findRandomGoal(monster.characterPos_w);
+          monster.goalPosition = monster.findRandomGoal(monster.characterPos_w, worldState.rng);
           monster.path = map.findPath(
             monster.characterPos_w,
             monster.goalPosition,

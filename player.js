@@ -15,7 +15,7 @@ export class Player extends Character {
      */
     constructor(name, cClass, characterPos_w, clientID) {
         super(name, cClass, characterPos_w)
-        this.direction = Math.floor(Math.random() * 4) + 1;
+        this.direction = 1;
         /** @type {{ from: Vector2d, to: Vector2d, path: Vector2d[] | null }| null} */
         this.debugPath = null;
         this.clientID = clientID

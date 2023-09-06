@@ -15,6 +15,7 @@ import { Client } from "./lib/networking/client.js";
 import { Serializer } from "./serializer.js";
 import { Monster } from "./monster.js";
 import { draw } from "./draw.js";
+import { PCG32 } from "./lib/pcg.js";
 
 /** @typedef {import("./tiledLoader.js").ItemProperty} ItemProperty */
 /** @typedef {import("./tiledLoader.js").EquipType} EquipType */
