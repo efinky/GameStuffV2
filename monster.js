@@ -59,4 +59,5 @@ export class Monster extends Character {
         this.prevPos = this.characterPos_w;
     }
 
+
 }

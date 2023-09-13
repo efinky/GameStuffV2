@@ -11,7 +11,13 @@ import { PCG32 } from "./lib/pcg.js";
 
 /** @typedef {import("./app.js").SimChunk} SimChunk */
 
-export const serializer = new Serializer([WorldMap, Player, Monster, Vector2d, PCG32]);
+export const serializer = new Serializer([
+  WorldMap,
+  Player,
+  Monster,
+  Vector2d,
+  PCG32,
+]);
 
 export class WorldState {
   /**
@@ -22,14 +28,21 @@ export class WorldState {
     this.map = map;
     /** @type {{[key: string]: Player}} */
     this.players = {};
+    /** @type {{[key: string]: Monster[]} }*/
+    this.otherPlayersMonsters = {};
     /** @type {Monster[]} */
     this.monsters = [];
-    this.monsters.push(new Monster("bob", "Goblin", new Vector2d(1100, 1100), this.rng));
+    this.monsters.push(
+      new Monster("bob", "Goblin", new Vector2d(1100, 1100), this.rng)
+    );
     this.monsters.push(
       new Monster(
         "bob1",
         "Goblin",
-        new Vector2d(this.rng.randomInt(1000, 2000), this.rng.randomInt(1000, 2000)),
+        new Vector2d(
+          this.rng.randomInt(1000, 2000),
+          this.rng.randomInt(1000, 2000)
+        ),
         this.rng
       )
     );
@@ -37,7 +50,10 @@ export class WorldState {
       new Monster(
         "bob2",
         "Goblin",
-        new Vector2d(this.rng.randomInt(1000, 2000), this.rng.randomInt(1000, 2000)),
+        new Vector2d(
+          this.rng.randomInt(1000, 2000),
+          this.rng.randomInt(1000, 2000)
+        ),
         this.rng
       )
     );
@@ -45,7 +61,10 @@ export class WorldState {
       new Monster(
         "bob3",
         "Goblin",
-        new Vector2d(this.rng.randomInt(1000, 2000), this.rng.randomInt(1000, 2000)),
+        new Vector2d(
+          this.rng.randomInt(1000, 2000),
+          this.rng.randomInt(1000, 2000)
+        ),
         this.rng
       )
     );
@@ -53,7 +72,10 @@ export class WorldState {
       new Monster(
         "bob4",
         "Goblin",
-        new Vector2d(this.rng.randomInt(1000, 2000), this.rng.randomInt(1000, 2000)),
+        new Vector2d(
+          this.rng.randomInt(1000, 2000),
+          this.rng.randomInt(1000, 2000)
+        ),
         this.rng
       )
     );
@@ -162,17 +184,26 @@ export class WorldState {
         case "peerLeft":
           break;
         case "peerEvent":
-          if (event.msg.peerEvent.type === "moveTarget") {
-            const clientId = event.clientId;
-            // Add move target onto player
-            this.players[clientId].setMoveTarget(
-              event.msg.peerEvent.moveTarget
-            );
+          switch (event.msg.peerEvent.type) {
+            case "moveTarget":
+              {
+                const clientId = event.clientId;
+                // Add move target onto player
+                this.players[clientId].setMoveTarget(
+                  event.msg.peerEvent.moveTarget
+                );
+              }
+              break;
+            case "attack": {
+              const clientId = event.clientId;
+              this.playerAttack(clientId);
+            }
+            break;
+            case "monsterUpdateAction": {
+              this.otherPlayersMonsters[event.clientId] = event.msg.peerEvent.monsters
+            }
           }
-          if (event.msg.peerEvent.type === "attack") {
-            const clientId = event.clientId;
-            this.playerAttack(clientId);
-          }
+
           break;
       }
     }
@@ -194,6 +225,7 @@ export class WorldState {
       map: this.map,
       players: this.players,
       monsters: this.monsters,
+      otherPlayersMonsters: {},
       time: this.time,
     });
   }

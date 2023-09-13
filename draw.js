@@ -37,6 +37,7 @@ import { WorldState } from "./worldState.js";
     let player = worldState.players[localClientId];
 
     // Top left corner of the viewable area, in world coordinates
+    //console.log(player)
     let viewportOrigin_w = player.characterPos_w
       .sub(canvasSize.scale(0.5))
       .clamp(mapRect);
@@ -98,7 +99,27 @@ import { WorldState } from "./worldState.js";
         viewportOrigin_w
       );
     }
-
+    for (let clientId in worldState.otherPlayersMonsters) {
+        if (clientId === localClientId) {
+          continue;
+        }
+        const otherPlayersMonsters = worldState.otherPlayersMonsters[clientId];
+        
+        for (const monster of otherPlayersMonsters) {
+          const OMposition = monster.characterPos_w;
+          // draw green square around position
+          console.log("draw monsters: ", OMposition);
+          ctx.strokeStyle = "red";
+          ctx.beginPath();
+          ctx.rect(
+            ...OMposition.sub(viewportOrigin_w).arr(),
+            tileSize.x,
+            tileSize.y
+          );
+          ctx.stroke();
+        }
+    }
+    
     for (const character of characters) {
       if (character instanceof Player) {
         let playerImageId = assets.playerSet.getPlayerImageId(

@@ -25,7 +25,8 @@ import { PCG32 } from "./lib/pcg.js";
 
 /** @typedef {{type: "moveTarget", moveTarget: Vector2d|null}} MovementAction */
 /** @typedef {{type: "attack"}} AttackAction */
-/** @typedef {MovementAction|AttackAction} PlayerAction */
+/** @typedef {{type: "monsterUpdateAction", monsters: Monster[]}} MonsterUpdateAction */
+/** @typedef {MovementAction|AttackAction|MonsterUpdateAction} PlayerAction */
 /** @typedef {import("./lib/networking/simulation.js").SimChunk<PlayerAction>} SimChunk */
 
 
@@ -109,6 +110,7 @@ export async function run() {
   /** @type {Vector2d|null} */
   let localMoveTarget = null;
   let timestamp = performance.now();
+  let lastSent = 0;
   /** @type {Vector2d | null} */
 
   let inventory = new Inventory(
@@ -246,6 +248,16 @@ export async function run() {
         moveTarget,
       });
     }
+
+    if (now > lastSent) {
+        lastSent = now + 1000;
+        networkHandler.sendEvent({
+          type: "monsterUpdateAction",
+          monsters: worldState.monsters,
+        });
+        console.log("last state:", networkHandler.stateAtLastConnect);
+        console.log("events since last connect: ", networkHandler.eventsSinceLastConnect)
+      }
     
     let chunks = networkHandler.getEvents()
     if (chunks != null) {
