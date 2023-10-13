@@ -80,8 +80,10 @@ export class WorldState {
       )
     );
     this.time = 0;
-    /** @type {{[idx: number]: Item}} */
+    /** @type {Item[]} */
     this.items = [];
+    /** @type {{pos: Vector2d, id: number}[]} */
+    this.itemsOnGround = [];
     // let serializer = new Serializer([WorldState, WorldMap, Player, Monster, Vector2d]);
     // const jsony = serializer.stringify(this);
 
@@ -116,7 +118,10 @@ export class WorldState {
   async loadAssets() {
     let mapCurrent = await WorldMap.load(this.map);
 
-    this.items = mapCurrent.getAllItems();
+    for (let {pos, item} of mapCurrent.getAllItems()) {
+      let id = this.items.push(item) - 1;
+      this.itemsOnGround.push({pos, id});
+    }
 
     /** @type {{[idx: number]: HTMLImageElement}} */
     let itemImages = [];

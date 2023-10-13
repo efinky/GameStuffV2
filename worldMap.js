@@ -206,8 +206,8 @@ export class WorldMap {
     }
 
     getAllItems() {
-        /** @type {{[idx: number]: Item}} */
-        let items = {};
+        /** @type {{pos: Vector2d, item: Item}[]} */
+        let items = [];
         let layer = 1;
         for (let y = 0; y < this.map.height; y++) {
             for (let x = 0; x < this.map.width; x++) {
@@ -218,7 +218,8 @@ export class WorldMap {
                     this.map.layers[layer].data[linearCoord] = 0;
                     let item = this.getItemByTileNumber(tileNumber);
                     if (item) {
-                        items[linearCoord] = item;
+                        const tileCoord = this.tileCoordFromLinearCoord(linearCoord);
+                        items.push({pos: tileCoord, item});
                     }
                 }
             }
