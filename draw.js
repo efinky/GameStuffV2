@@ -13,12 +13,11 @@ import { WorldState } from "./worldState.js";
 //get a better person/add animation as well.
 /**
    *
-   * @param {Assets} assets
    * @param {WorldState} worldState
    * @param {string} localClientId
 
    */
-export function draw(assets, worldState, localClientId) {
+export function draw(worldState, localClientId) {
   let canvas = document.getElementById("canvas");
   if (!(canvas instanceof HTMLCanvasElement)) {
     return;
@@ -27,9 +26,9 @@ export function draw(assets, worldState, localClientId) {
   if (!ctx) {
     return null;
   }
-  let tileSize = assets.mapCurrent.tileSize();
+  let tileSize = worldState.map.tileSize();
 
-  let mapSize = assets.mapCurrent.size().mul(tileSize);
+  let mapSize = worldState.map.size().mul(tileSize);
   let canvasSize = new Vector2d(canvas.width, canvas.height);
   let mapRect = new Rect(new Vector2d(0, 0), mapSize.sub(canvasSize));
 
@@ -49,7 +48,7 @@ export function draw(assets, worldState, localClientId) {
             ctx.drawImage(document.getElementById(imageArray[p.mapLookup(map)]), ...p.scale(32).sub(viewportOrigin_w).arr());
         });*/
 
-  let speed = assets.mapCurrent.getTileSpeed(player.characterPos_w, 0);
+  let speed = worldState.map.getTileSpeed(player.characterPos_w, 0);
   // Draw Person
   //ctx.drawImage(playerImage, ...player.characterPos_w.sub(viewportOrigin_w).arr());
 
@@ -78,10 +77,10 @@ export function draw(assets, worldState, localClientId) {
   //   return a.characterPos_w.y - b.characterPos_w.y;
   // });
 
-  assets.mapCurrent.draw(ctx, viewportOrigin_w, canvasSize);
+  worldState.map.draw(ctx, viewportOrigin_w, canvasSize);
 
   // draw item images from state
-  drawItems(ctx, assets, worldState, viewportOrigin_w);
+  drawItems(ctx, worldState, viewportOrigin_w);
 
   for (let clientId in worldState.otherPlayersMonsters) {
     if (clientId === localClientId) {
@@ -106,23 +105,23 @@ export function draw(assets, worldState, localClientId) {
 
   for (const character of characters) {
     if (character instanceof Player) {
-      let playerImageId = assets.playerSet.getPlayerImageId(
+      let playerImageId = worldState.playerSet.getPlayerImageId(
         character.class,
         character.direction,
         character.step
       );
-      assets.playerSet.draw(
+      worldState.playerSet.draw(
         playerImageId,
         ctx,
         character.characterPos_w.sub(viewportOrigin_w)
       );
     } else {
-      let monsterImageId = assets.monsterSet.getPlayerImageId(
+      let monsterImageId = worldState.monsterSet.getPlayerImageId(
         character.class,
         character.direction,
         character.step
       );
-      assets.monsterSet.draw(
+      worldState.monsterSet.draw(
         monsterImageId,
         ctx,
         character.characterPos_w.sub(viewportOrigin_w)
@@ -174,14 +173,13 @@ export function draw(assets, worldState, localClientId) {
 /**
   * 
   * @param {CanvasRenderingContext2D} ctx 
-  * @param {Assets} assets 
   * @param {WorldState} worldState 
   * @param {Vector2d} viewportOrigin_w 
   */
-function drawItems(ctx, assets, worldState, viewportOrigin_w) {
+function drawItems(ctx, worldState, viewportOrigin_w) {
   for (const {pos, id} of worldState.itemsOnGround) {
     const item = worldState.items[id];
-    assets.mapCurrent.drawTile(
+    worldState.map.drawTile(
       item.tileNumber,
       ctx,
       pos,

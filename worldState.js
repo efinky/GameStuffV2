@@ -11,6 +11,16 @@ import { PCG32 } from "./lib/pcg.js";
 
 /** @typedef {import("./app.js").SimChunk} SimChunk */
 
+/** @typedef {Awaited<ReturnType<typeof WorldState.loadAssets>>} Assets */
+// // Typedef of the return type of loadAssets
+// /**
+//     * @typedef {Object} Assets
+//     * @property {WorldMap} mapCurrent
+//     * @property {CharacterSet} playerSet
+//     * @property {CharacterSet} monsterSet
+//     * @property {HTMLImageElement[]} itemImages
+//     */
+
 export const serializer = new Serializer([
   WorldMap,
   Player,
@@ -21,11 +31,16 @@ export const serializer = new Serializer([
 
 export class WorldState {
   /**
-   * @param {string} map
+   * @param {Assets} assets
+   * @param {{map: string, monsterSet: string, playerSet: string }} assetJson
    */
-  constructor(map) {
+  constructor(assets, assetJson) {
     this.rng = new PCG32();
-    this.map = map;
+    this.map = assets.map;
+    this.assetJson = assetJson;
+    this.playerSet = assets.playerSet;
+    this.monsterSet = assets.monsterSet;
+    this.itemImages = assets.itemImages;
     /** @type {{[key: string]: Player}} */
     this.players = {};
     /** @type {{[key: string]: Monster[]} }*/
@@ -89,7 +104,28 @@ export class WorldState {
 
     // console.log("state:", jsony);
   }
+  /**
+   *
+   * @param {{map: string, playerSet: string, monsterSet: string}} assetJson
+   */
+  static async init(assetJson) {
+    const assets = await this.loadAssets(assetJson);
+    const worldState = new WorldState(assets, assetJson);
+    worldState.loadMapItems(assets.items);
 
+    return worldState;
+  }
+
+  /**
+   *
+   * @param {{pos: Vector2d, item: Item}[]} items
+   */
+  loadMapItems(items) {
+    for (let { pos, item } of items) {
+      let id = this.items.push(item) - 1;
+      this.itemsOnGround.push({ pos, id });
+    }
+  }
   characters() {
     let playerArray = [];
     for (let key in this.players) {
@@ -115,33 +151,30 @@ export class WorldState {
     }
   }
 
-  async loadAssets() {
-    let mapCurrent = await WorldMap.load(this.map);
-
-    for (let {pos, item} of mapCurrent.getAllItems()) {
-      let id = this.items.push(item) - 1;
-      this.itemsOnGround.push({pos, id});
-    }
+  /**
+   * @param {{map: string, playerSet: string, monsterSet: string}} assetJson
+   */
+  static async loadAssets(assetJson) {
+    let { map, items } = await WorldMap.load(assetJson.map);
 
     /** @type {{[idx: number]: HTMLImageElement}} */
     let itemImages = [];
-    for (let item of Object.values(this.items)) {
-      const itemImage = mapCurrent.itemImageFromTileNumber(item.tileNumber);
+    for (let item of Object.values(items).map((i) => i.item)) {
+      const itemImage = map.itemImageFromTileNumber(item.tileNumber);
       if (itemImage) {
         itemImages[item.tileNumber] = itemImage;
       }
     }
 
-    let playerSet = await CharacterSet.load("Player.json");
-    let monsterSet = await CharacterSet.load("Monsters.json");
-    return { mapCurrent, playerSet, monsterSet, itemImages };
+    let playerSet = await CharacterSet.load(assetJson.playerSet); // "Player.json"
+    let monsterSet = await CharacterSet.load(assetJson.monsterSet); // "Monsters.json"
+    return { map, playerSet, monsterSet, itemImages, items };
   }
 
   /** 
     @param {number} dt
-    @param {WorldMap} map
      */
-  update(dt, map) {
+  update(dt) {
     this.time += dt;
     moveMonsters(
       dt,
@@ -149,11 +182,11 @@ export class WorldState {
       this.monsters,
       this.players,
       this.characters(),
-      map,
+      this.map,
       this
     );
 
-    movePlayer(dt, this.players, this.characters(), map);
+    movePlayer(dt, this.players, this.characters(), this.map);
   }
 
   /**
@@ -175,11 +208,10 @@ export class WorldState {
     }
   }
 
-  /** 
+  /**
     @param {SimChunk} chunk
-    @param {WorldMap} map
      */
-  processChunk(chunk, map) {
+  processChunk(chunk) {
     const { peerEvents, dt } = chunk;
     for (const event of peerEvents) {
       switch (event.msg.type) {
@@ -199,27 +231,35 @@ export class WorldState {
                 );
               }
               break;
-            case "attack": {
-              const clientId = event.clientId;
-              this.playerAttack(clientId);
-            }
-            break;
+            case "attack":
+              {
+                const clientId = event.clientId;
+                this.playerAttack(clientId);
+              }
+              break;
             case "monsterUpdateAction": {
-              this.otherPlayersMonsters[event.clientId] = event.msg.peerEvent.monsters
+              this.otherPlayersMonsters[event.clientId] =
+                event.msg.peerEvent.monsters;
             }
           }
 
           break;
       }
     }
-    this.update(dt / 1000, map);
+    this.update(dt / 1000);
   }
 
   /**
    * @param {string} json
    */
-  static fromJSON(json) {
+  static async fromJSON(json) {
     const obj = serializer.parse(json);
+    const assetJson = obj.assetJson;
+    const assets = await this.loadAssets(assetJson);
+    obj.map = assets.map;
+    obj.playerSet = assets.playerSet;
+    obj.monsterSet = assets.monsterSet;
+    obj.itemImages = assets.itemImages;
     Object.setPrototypeOf(obj, WorldState.prototype);
     return obj;
   }
@@ -227,21 +267,13 @@ export class WorldState {
   toJSON() {
     return serializer.stringify({
       rng: this.rng,
-      map: this.map,
+      assetJson: this.assetJson,
       players: this.players,
       monsters: this.monsters,
+      items: this.items,
+      itemsOnGround: this.itemsOnGround,
       otherPlayersMonsters: {},
       time: this.time,
     });
   }
 }
-
-/** @typedef {Awaited<ReturnType<typeof WorldState.prototype.loadAssets>>} Assets */
-// // Typedef of the return type of loadAssets
-// /**
-//     * @typedef {Object} Assets
-//     * @property {WorldMap} mapCurrent
-//     * @property {CharacterSet} playerSet
-//     * @property {CharacterSet} monsterSet
-//     * @property {HTMLImageElement[]} itemImages
-//     */

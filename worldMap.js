@@ -22,10 +22,11 @@ export class WorldMap {
             // console.log("TileSet", v);
         }
 
+        let map = new WorldMap(data, loadedTilesets);
         // { [key: string]: TileSet}
+        let items = map.getAllItems();
 
-        return new WorldMap(data, loadedTilesets);
-
+        return {map, items};
     }
     /**
      *

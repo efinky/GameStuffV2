@@ -22,13 +22,11 @@ import { PCG32 } from "./lib/pcg.js";
 /** @typedef {import("./character.js").EquippableSlot}  EquippableSlot */
 // import someData from "./test.json" assert { type: "json" };
 
-
 /** @typedef {{type: "moveTarget", moveTarget: Vector2d|null}} MovementAction */
 /** @typedef {{type: "attack"}} AttackAction */
 /** @typedef {{type: "monsterUpdateAction", monsters: Monster[]}} MonsterUpdateAction */
 /** @typedef {MovementAction|AttackAction|MonsterUpdateAction} PlayerAction */
 /** @typedef {import("./lib/networking/simulation.js").SimChunk<PlayerAction>} SimChunk */
-
 
 /**
  * @typedef {import("./lib/networking/simulation.js").SimulationClient<PlayerAction>} SimulationClient
@@ -69,7 +67,11 @@ function getCanvasMousePos(mouseEvent) {
 }
 
 export async function run() {
-  let worldState = new WorldState("BasicMap.json");
+  let worldState = await WorldState.init({
+    map: "BasicMap.json",
+    monsterSet: "Monsters.json",
+    playerSet: "Players.json",
+  });
 
   // worldState.initItems(assets.mapCurrent);
 
@@ -80,29 +82,26 @@ export async function run() {
   if (hash == "") {
     // console.log("hash", hash);
     // if (hash === "host") {
-      const { token, start: startListen } = await listen();
-      const server = Server.init({ getState: () => worldState });
-      const { stop } = await startListen({
-        onConnect: (channel) => server.onConnect(channel),
-      });
-      // set the hash to the token so that clients can connect
-      url.hash = encodeURIComponent(token);
-      history.replaceState(null, "", url.toString());
-      networkHandler = server;
-    } else {
-      const token = decodeURIComponent(hash);
-      let channel = await connect(token);
-      const { client, clientId, state: s } = await Client.init(channel);
+    const { token, start: startListen } = await listen();
+    const server = Server.init({ getState: () => worldState });
+    const { stop } = await startListen({
+      onConnect: (channel) => server.onConnect(channel),
+    });
+    // set the hash to the token so that clients can connect
+    url.hash = encodeURIComponent(token);
+    history.replaceState(null, "", url.toString());
+    networkHandler = server;
+  } else {
+    const token = decodeURIComponent(hash);
+    let channel = await connect(token);
+    const { client, clientId, state: s } = await Client.init(channel);
 
-      worldState = WorldState.fromJSON(s);
-      console.log("WorldState:", worldState);
-      networkHandler = client;
-    }
+    worldState = await WorldState.fromJSON(s);
+    console.log("WorldState:", worldState);
+    networkHandler = client;
+  }
   // }
 
-
-
-  let assets = await worldState.loadAssets();
   Events.setWorldState(worldState);
 
   /** @type {{[key: number]: boolean}} */
@@ -116,7 +115,7 @@ export async function run() {
   let inventory = new Inventory(
     getElement("inventoryBox"),
     worldState.player,
-    assets.itemImages
+    worldState.itemImages
   );
 
   let canvas = document.getElementById("canvas");
@@ -129,10 +128,10 @@ export async function run() {
     keystate[event.keyCode] = true;
     if (event.key == "i") {
       inventory.toggleVisibility();
-    event.preventDefault();
+      event.preventDefault();
     } else if (event.key == "g") {
-      Events.dispatch(Events.PickupItem(assets.mapCurrent));
-    event.preventDefault();
+      Events.dispatch(Events.PickupItem(worldState.map));
+      event.preventDefault();
     } else if (event.key == "a") {
       //find direction player is facing
       //get bounding box for where character is facing
@@ -144,7 +143,7 @@ export async function run() {
       networkHandler.sendEvent({
         type: "attack",
       });
-    event.preventDefault();
+      event.preventDefault();
     }
   });
   document.addEventListener("keyup", (event) => {
@@ -162,19 +161,19 @@ export async function run() {
       localMoveTarget = cPos;
       event.stopPropagation();
     } else if (event.button == 2) {
-    //   const cPos = getCanvasMousePos(event);
-    //   if (cPos && canvas instanceof HTMLCanvasElement) {
-    //     let tileSize = assets.mapCurrent.tileSize();
-    //     let mapSize = assets.mapCurrent.size().mul(tileSize);
-    //     let canvasSize = new Vector2d(canvas.width, canvas.height);
-    //     let mapRect = new Rect(new Vector2d(0, 0), mapSize.sub(canvasSize));
-    //     let viewportOrigin_w = worldState.player.characterPos_w
-    //       .sub(canvasSize.scale(0.5))
-    //       .clamp(mapRect);
-    //     worldState.player.setDebugPathTarget(cPos.add(viewportOrigin_w));
-    //     // const debugPath = assets.mapCurrent.findPath(worldState.player.characterPos_w, cPos.add(viewportOrigin_w), 0);
-    //     // worldState.player.debugPath = debugPath;
-    //   }
+      //   const cPos = getCanvasMousePos(event);
+      //   if (cPos && canvas instanceof HTMLCanvasElement) {
+      //     let tileSize = assets.mapCurrent.tileSize();
+      //     let mapSize = assets.mapCurrent.size().mul(tileSize);
+      //     let canvasSize = new Vector2d(canvas.width, canvas.height);
+      //     let mapRect = new Rect(new Vector2d(0, 0), mapSize.sub(canvasSize));
+      //     let viewportOrigin_w = worldState.player.characterPos_w
+      //       .sub(canvasSize.scale(0.5))
+      //       .clamp(mapRect);
+      //     worldState.player.setDebugPathTarget(cPos.add(viewportOrigin_w));
+      //     // const debugPath = assets.mapCurrent.findPath(worldState.player.characterPos_w, cPos.add(viewportOrigin_w), 0);
+      //     // worldState.player.debugPath = debugPath;
+      //   }
       event.stopPropagation();
       event.preventDefault();
     }
@@ -217,31 +216,50 @@ export async function run() {
   );
   window.requestAnimationFrame(onFrame);
 
+  // TODO FIX THIS Maybe use a class instead so that the generics work between getter and onChange
+  /**
+    * @type {{getter: (state: WorldState) => any, onChange: (oldValue: any, newValue: any) => void}[]}
+   */
+  const watchers = [
+    {
+      /**
+       * 
+       * @param {*} state 
+       * @returns 
+       */
+      getter: (state) => state.players[networkHandler.clientId],
+      /**
+       * 
+       * @param {*} oldPlayer 
+       * @param {*} newPlayer 
+       */
+      onChange: (oldPlayer, newPlayer) => {},
+    },
+  ];
   /**
    *
    * @param {number} now
    */
   function onFrame(now) {
-
     if (localMoveTarget != null) {
       if (!(canvas instanceof HTMLCanvasElement)) {
         return;
       }
       let player = worldState.players[networkHandler.clientId];
       console.log("player position", player.characterPos_w);
-      let tileSize = assets.mapCurrent.tileSize();
+      let tileSize = worldState.map.tileSize();
 
-      let mapSize = assets.mapCurrent.size().mul(tileSize);
+      let mapSize = worldState.map.size().mul(tileSize);
       let canvasSize = new Vector2d(canvas.width, canvas.height);
       let mapRect = new Rect(new Vector2d(0, 0), mapSize.sub(canvasSize));
 
       let viewportOrigin_w = player.characterPos_w
-      .sub(canvasSize.scale(0.5))
-      .clamp(mapRect);
-      const moveTarget = assets.mapCurrent.viewportToWorld(
-          localMoveTarget,
-          viewportOrigin_w
-        );
+        .sub(canvasSize.scale(0.5))
+        .clamp(mapRect);
+      const moveTarget = worldState.map.viewportToWorld(
+        localMoveTarget,
+        viewportOrigin_w
+      );
       console.log("moveTarget", moveTarget);
       networkHandler.sendEvent({
         type: "moveTarget",
@@ -250,23 +268,35 @@ export async function run() {
     }
 
     if (now > lastSent) {
-        lastSent = now + 1000;
-        networkHandler.sendEvent({
-          type: "monsterUpdateAction",
-          monsters: worldState.monsters,
-        });
-        console.log("last state:", networkHandler.stateAtLastConnect);
-        console.log("events since last connect: ", networkHandler.eventsSinceLastConnect)
-      }
-    
-    let chunks = networkHandler.getEvents()
-    if (chunks != null) {
-        for (let chunk of chunks) {
-            worldState.processChunk(chunk, assets.mapCurrent);
-        }
+      lastSent = now + 1000;
+      networkHandler.sendEvent({
+        type: "monsterUpdateAction",
+        monsters: worldState.monsters,
+      });
+      console.log("last state:", networkHandler.stateAtLastConnect);
+      console.log(
+        "events since last connect: ",
+        networkHandler.eventsSinceLastConnect
+      );
     }
 
-    draw(assets, worldState, networkHandler.clientId);
+    const oldWatches = watchers.map((w) => w.getter(worldState));
+
+    let chunks = networkHandler.getEvents();
+    if (chunks != null) {
+      for (let chunk of chunks) {
+        worldState.processChunk(chunk);
+      }
+    }
+
+    const newWatches = watchers.map((w) => w.getter(worldState));
+    for (let i = 0; i < watchers.length; i++) {
+      if (JSON.stringify(oldWatches[i]) !== JSON.stringify(newWatches[i])) {
+        watchers[i].onChange(oldWatches[i], newWatches[i]);
+      }
+    }
+
+    draw(worldState, networkHandler.clientId);
     window.requestAnimationFrame(onFrame);
   }
 
@@ -275,7 +305,7 @@ export async function run() {
   //TODO only draw map in viewportOrigin_w
   //add mountains
   //get a better person/add animation as well.
-  
+
   /**
    *
    * @param {Document} doc
