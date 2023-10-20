@@ -9,6 +9,14 @@ import { moveMonsters, movePlayer, playerAttack } from "./movement.js";
 import { Character } from "./character.js";
 import { PCG32 } from "./lib/pcg.js";
 
+/**
+  * @param {never} x
+  * @returns {never}
+  */
+function assertUnreachable(x) {
+  throw new Error("Didn't expect to get here");
+}
+
 /** @typedef {import("./app.js").SimChunk} SimChunk */
 
 /** @typedef {Awaited<ReturnType<typeof WorldState.loadAssets>>} Assets */
@@ -240,6 +248,49 @@ export class WorldState {
             case "monsterUpdateAction": {
               this.otherPlayersMonsters[event.clientId] =
                 event.msg.peerEvent.monsters;
+                break;
+            }
+            case "pickupItem": {
+              const clientId = event.clientId;
+              const player = this.players[clientId];
+              const itemId = event.msg.peerEvent.id;
+              // Find item in itemsOnGround, remove it from itemsOnGround, and add it to player's inventory
+              const itemIndex = this.itemsOnGround.findIndex((e) => e.id === itemId);
+              if (itemIndex === -1) {
+                console.log("item not found");
+                break;
+              }
+              const item = this.itemsOnGround[itemIndex];
+              player.pickupItem(item.id);
+              this.itemsOnGround.splice(itemIndex, 1);
+              break;
+
+            }
+            case "dropItem": {
+              const clientId = event.clientId;
+              const player = this.players[clientId];
+              const itemId = event.msg.peerEvent.id;
+              if (player.dropItem(itemId)) {
+                this.itemsOnGround.push({ pos: player.characterPos_w, id: itemId });
+              }
+              break;
+
+            }
+            case "equipItem": {
+              const clientId = event.clientId;
+              const player = this.players[clientId];
+              const itemId = event.msg.peerEvent.id;
+              const slot = event.msg.peerEvent.slot;
+              player.equipItem(itemId, slot);
+              break;
+
+            }
+            case "unEquipItem": {
+              const clientId = event.clientId;
+              const player = this.players[clientId];
+              const slot = event.msg.peerEvent.slot;
+              player.unequipItem(slot);
+              break;
             }
           }
 

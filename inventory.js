@@ -6,6 +6,7 @@ import { Item } from "./item.js";
 import { WorldState } from "./worldState.js";
 import { dispatch } from "./events.js";
 
+//Need to Dispatch drop and equip and unequip.
 /** 
 @param {string} source 
  @return {(state: WorldState) => void}  */
@@ -71,7 +72,7 @@ function equipableInSlot(equipType, slot) {
 /**
  * @typedef {Object} DraggedItem
  * @property {HTMLElement} element
- * @property {Item} item
+ * @property {number} item
  * @property {string} source
  */
 
@@ -79,15 +80,23 @@ export class Inventory {
     /**
      * @param { HTMLElement } inventoryBox
      *  @param {Player} player 
-     * @param {{[idx: number]: HTMLImageElement}} images
+     * @param {WorldState} worldState
      */
-    constructor(inventoryBox, player, images) {
+    constructor(inventoryBox, player, worldState) {
         this.inventoryBox = inventoryBox;
         this.player = player;
         /** @type {DraggedItem | null} */
         this.draggedItem = null;
-        this.images = images;
+        this.worldState = worldState;
         this.init();
+    }
+
+    /**
+        * @param {Player} player
+        */
+    updatePlayer(player) {
+        this.player = player;
+        this.updateInventory();
     }
 
     toggleVisibility() {
@@ -138,8 +147,10 @@ export class Inventory {
         while (this.inventoryBox.lastChild) {
             this.inventoryBox.removeChild(this.inventoryBox.lastChild);
         }
+        //Display items
         this.player.inventory.forEach(i => {
-            let x = this.images[i.tileNumber].cloneNode(false);
+            let item = this.worldState.items[i]
+            let x = this.worldState.itemImages[item.tileNumber].cloneNode(false);
             if (!(x instanceof HTMLElement)) {
                 console.log("Not an element: ", x);
                 return;
@@ -148,8 +159,8 @@ export class Inventory {
             //     "tileNumber":i.tileNumber,
             //     "name":i.name
             // };
-            x.dataset.tileNumber = "" + i.tileNumber;
-            x.dataset.name = i.name;
+            x.dataset.tileNumber = "" + item.tileNumber;
+            x.dataset.name = item.name;
             x.draggable = true;
             x.addEventListener("dragstart", (event) => {
                 if (!(event.target instanceof HTMLElement)) {
@@ -163,6 +174,7 @@ export class Inventory {
             this.inventoryBox.appendChild(x);
         });
 
+        
         for (let slot in equipSlots) {
             const elem = document.getElementById(slot);
             if (!elem) {
@@ -174,13 +186,14 @@ export class Inventory {
             }
             let i = this.player.equipped[equipSlots[slot]];
             if (i) {
-                let x = this.images[i.tileNumber].cloneNode(false);
+                let item = this.worldState.items[i];
+                let x = this.worldState.itemImages[item.tileNumber].cloneNode(false);
                 if (!(x instanceof HTMLElement)) {
                     console.log("Not an element: ", x);
                     return;
                 }
-                x.dataset.tileNumber = "" + i.tileNumber;
-                x.dataset.name = i.name;
+                x.dataset.tileNumber = "" + item.tileNumber;
+                x.dataset.name = item.name;
                 x.draggable = true;
                 x.addEventListener("dragstart", (event) => {
                     if (!(event.target instanceof HTMLElement)) {
@@ -231,7 +244,8 @@ export class Inventory {
             if (!this.draggedItem || !(event.target instanceof HTMLElement)) {
                 return;
             }
-            let item = this.draggedItem.item;
+            let i = this.draggedItem.item;
+            let item = this.worldState.items[i];
             if (id in equipSlots && !this.player.equipped[equipSlots[id]] && event.target.id == id && equipableInSlot(item.equippedType, equipSlots[id])) {
                 event.target.classList.add("dragHover");
             }
@@ -242,7 +256,8 @@ export class Inventory {
                 return;
             }
             // let item = mapCurrent.getItemByTileNumber(this.draggedItem.element.dataset.tileNumber);
-            let item = this.draggedItem.item;
+            let i = this.draggedItem.item;
+            let item = this.worldState.items[i];
             if (id in equipSlots && !this.player.equipped[equipSlots[id]] && event.target.id == id && equipableInSlot(item.equippedType, equipSlots[id])) {
                 event.target.classList.remove("dragHover");
             }
@@ -253,7 +268,8 @@ export class Inventory {
                 return;
             }
             // let item = mapCurrent.getItemByTileNumber(this.draggedItem.element.dataset.tileNumber);
-            let item = this.draggedItem.item;
+            let i = this.draggedItem.item;
+            let item = this.worldState.items[i];
             if (id in equipSlots && !this.player.equipped[equipSlots[id]] && event.target.id == id && equipableInSlot(item.equippedType, equipSlots[id])) {
                 // this.draggedItem.parentNode.removeChild( this.draggedItem );
 
@@ -261,7 +277,7 @@ export class Inventory {
                     let inventory = []
                     let removed = false
                     for (let i in this.player.inventory) {
-                        if (!removed && this.player.inventory[i].tileNumber == item.tileNumber) {
+                        if (!removed && this.worldState.items[this.player.inventory[i]].tileNumber == item.tileNumber) {
                             removed = true;
                         } else {
                             inventory.push(this.player.inventory[i]);
@@ -271,7 +287,7 @@ export class Inventory {
                 } else {
                     delete this.player.equipped[equipSlots[this.draggedItem.source]];
                 }
-                this.player.equipped[equipSlots[id]] = item;
+                this.player.equipped[equipSlots[id]] = i;
                 // event.target.appendChild( this.draggedItem.element );
                 event.target.classList.remove("dragHover");
                 this.updateInventory();

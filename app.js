@@ -16,16 +16,24 @@ import { Serializer } from "./serializer.js";
 import { Monster } from "./monster.js";
 import { draw } from "./draw.js";
 import { PCG32 } from "./lib/pcg.js";
+import { Watcher } from "./watcher.js";
 
 /** @typedef {import("./tiledLoader.js").ItemProperty} ItemProperty */
 /** @typedef {import("./tiledLoader.js").EquipType} EquipType */
 /** @typedef {import("./character.js").EquippableSlot}  EquippableSlot */
 // import someData from "./test.json" assert { type: "json" };
 
+/** @typedef {{type: "pickupItem", id: number}} PickupAction */
+/** @typedef {{type: "dropItem", id: number}} DropAction */
+/** @typedef {{type: "equipItem", id: number, slot: EquippableSlot}} EquipAction */
+/** @typedef {{type: "unEquipItem", slot: EquippableSlot}} UnEquipAction */
+/** @typedef {PickupAction|DropAction|EquipAction|UnEquipAction} InventoryAction */
+
+
 /** @typedef {{type: "moveTarget", moveTarget: Vector2d|null}} MovementAction */
 /** @typedef {{type: "attack"}} AttackAction */
 /** @typedef {{type: "monsterUpdateAction", monsters: Monster[]}} MonsterUpdateAction */
-/** @typedef {MovementAction|AttackAction|MonsterUpdateAction} PlayerAction */
+/** @typedef {MovementAction|AttackAction|MonsterUpdateAction|InventoryAction} PlayerAction */
 /** @typedef {import("./lib/networking/simulation.js").SimChunk<PlayerAction>} SimChunk */
 
 /**
@@ -110,11 +118,13 @@ export async function run() {
   let localMoveTarget = null;
   let timestamp = performance.now();
   let lastSent = 0;
-  /** @type {Vector2d | null} */
+
+  const player = worldState.players[networkHandler.clientId];
+
 
   let inventory = new Inventory(
     getElement("inventoryBox"),
-    worldState.player,
+    player,
     worldState.itemImages
   );
 
@@ -216,26 +226,14 @@ export async function run() {
   );
   window.requestAnimationFrame(onFrame);
 
+
   // TODO FIX THIS Maybe use a class instead so that the generics work between getter and onChange
   /**
-    * @type {{getter: (state: WorldState) => any, onChange: (oldValue: any, newValue: any) => void}[]}
+    * @type {Watcher<WorldState, any>[]}
    */
-  const watchers = [
-    {
-      /**
-       * 
-       * @param {*} state 
-       * @returns 
-       */
-      getter: (state) => state.players[networkHandler.clientId],
-      /**
-       * 
-       * @param {*} oldPlayer 
-       * @param {*} newPlayer 
-       */
-      onChange: (oldPlayer, newPlayer) => {},
-    },
-  ];
+  const watchers = [new Watcher((state) => state.players[networkHandler.clientId], (oldPlayer, newPlayer) => {
+    inventory.updatePlayer(newPlayer);
+  })]
   /**
    *
    * @param {number} now
@@ -280,7 +278,7 @@ export async function run() {
       );
     }
 
-    const oldWatches = watchers.map((w) => w.getter(worldState));
+    const oldWatches = watchers.map((w) => w.get(worldState));
 
     let chunks = networkHandler.getEvents();
     if (chunks != null) {
@@ -289,11 +287,9 @@ export async function run() {
       }
     }
 
-    const newWatches = watchers.map((w) => w.getter(worldState));
+    const newWatches = watchers.map((w) => w.get(worldState));
     for (let i = 0; i < watchers.length; i++) {
-      if (JSON.stringify(oldWatches[i]) !== JSON.stringify(newWatches[i])) {
-        watchers[i].onChange(oldWatches[i], newWatches[i]);
-      }
+      watchers[i].check(oldWatches[i], newWatches[i])
     }
 
     draw(worldState, networkHandler.clientId);

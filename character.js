@@ -19,9 +19,9 @@ export class Character {
     constructor(name, cClass, characterPos_w) {
         this.name = name;
         this.class = cClass;
-        /** @type {Item[]} */
+        /** @type {number[]} */
         this.inventory = [];
-        /** @type {Record<EquippableSlot, Item | null>} */
+        /** @type {Record<EquippableSlot, number | null>} */
         this.equipped = {
             "head": null,
             "leftHand": null,
@@ -151,4 +151,42 @@ export class Character {
         // }
 
     }
+    /**
+     * 
+     * @param {number} itemID 
+     */
+    pickupItem(itemID) {
+        this.inventory.push(itemID);
+    }
+    /**
+     * 
+     * @param {number} itemID 
+     */
+    dropItem(itemID) {
+        const index = this.inventory.indexOf(itemID);
+        if (index != -1) {
+            this.inventory.splice(index, 1);
+            return true;
+        }
+        else {
+            console.log(itemID, " does not exist");
+            return false;
+        }
+    }
+    /**
+     * 
+     * @param {number} itemID 
+     * @param {EquippableSlot} slot 
+     */
+    equipItem(itemID, slot) {
+        this.equipped[slot] = itemID;
+    }
+    /**
+     * 
+     * @param {EquippableSlot} slot 
+     */
+    unequipItem(slot) {
+        this.equipped[slot] = null;
+    }
+
 }
