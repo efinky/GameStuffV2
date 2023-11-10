@@ -6,6 +6,103 @@ import { Item } from "./item.js";
 import { WorldState } from "./worldState.js";
 import { dispatch } from "./events.js";
 
+const template = document.createElement('template');
+template.innerHTML = `
+  <style>
+    *, *:before, *:after {
+                box-sizing: border-box;
+            }
+
+            .personBox > * {
+                border-width: 1px;
+                border-color: green;
+                border-style: solid;
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .dragHover {
+                border-width: 5px;
+                border-color: red;
+                border-style: solid;
+            }
+            .personBox {
+                /* background-color: darkmagenta; */
+                background-image: url(Pictures/PersonItems.png);
+                background-size: cover;
+                aspect-ratio: 4 / 5;
+                height: 100%;
+                box-sizing:border-box;
+                display: grid;
+                gap:5px;
+                grid-template-columns: 1fr 1fr 1fr;
+                grid-template-rows:  1fr 1fr 1fr 1fr;
+                grid-template-areas: 
+                    "nothinga head nothingb"
+                    "lefthand torso righthand"
+                    "nothingc legs nothingd"
+                    "leftfoot nothinge rightfoot";
+            }
+            .box {
+                box-sizing:border-box;
+                gap:10px;
+                padding: 20px;
+                border-radius:15px;
+                background-color: rgba(30, 30, 30, 0.7);
+                box-shadow:20px 20px 20px rgba(0,0,0,0.5);
+                /* position:absolute; */
+                /* top:20%;
+                left:20%; */
+                width: 60%;
+                height: 80%;
+                min-height: 250px;
+                max-height: 500px;
+                /* aspect-ratio: 2.5 / 1; */
+            }
+            .dialogInternalBox {
+                display:flex;
+                flex-flow: row;
+                width: 100%;
+                height: 100%;
+            }
+            .inventoryBox {
+                box-sizing:border-box;
+                display: grid;
+                grid-template-columns: repeat(auto-fill, 32px);
+                /* grid-template-rows: repeat(auto-fill, 32px); */
+                /* grid-template-columns: repeat(auto-fill, minmax(64px, 64px)); */
+                overflow-y: auto;
+                /* grid: 64px / auto auto auto; */
+                /* grid-auto-columns: 64px; */
+                grid-auto-rows: 32px;
+                /* grid-auto-flow: column; */
+                gap:10px;
+                justify-content: center;
+                padding: 20px;
+                border-radius:15px;
+                background-color: rgba(30, 30, 30, 1.0);
+                box-shadow:20px 20px 20px rgba(0,0,0,0.5);
+                flex: 1;
+                height:100%;
+            }
+  </style>
+  <dialog id="inventoryDialog" class="box">
+    <div class="dialogInternalBox">
+        <div id="inventoryBox" class="inventoryBox"> </div>
+        <div id="personBox" class="personBox">
+            <div id="personHead" style="grid-area: head;"></div>
+            <div id="personLeftHand" style="grid-area: lefthand;"></div>
+            <div id="personRightHand" style="grid-area: righthand;"></div>
+            <div id="personTorso" style="grid-area: torso;"></div>
+            <div id="personLegs" style="grid-area: legs;"></div>
+            <div id="personLeftFoot" style="grid-area: leftfoot;"></div>
+            <div id="personRightFoot" style="grid-area: rightfoot;"></div>
+        </div>
+    </div>
+</dialog>
+`;
+
 //Need to Dispatch drop and equip and unequip.
 
 /** 
@@ -77,19 +174,39 @@ function equipableInSlot(equipType, slot) {
  * @property {string} source
  */
 
-export class Inventory {
-    /**
-     * @param { HTMLElement } inventoryBox
-     *  @param {Player} player 
-     * @param {WorldState} worldState
-     */
-    constructor(inventoryBox, player, worldState) {
-        this.inventoryBox = inventoryBox;
-        this.player = player;
+export class Inventory extends HTMLElement {
+    constructor() {
+        super();
         /** @type {DraggedItem | null} */
         this.draggedItem = null;
-        this.worldState = worldState;
+
+        this.attachShadow({ mode: 'open' }).appendChild(template.content.cloneNode(true));
+    }
+
+    connectedCallback() {
         this.init();
+    }
+    get open() {
+        const dialog = this.shadowRoot.querySelector('dialog');
+        return dialog.open;
+        // return this.hasAttribute('open');
+    }
+    close(){
+        const dialog = this.shadowRoot.querySelector('dialog');
+        dialog.close();
+        // this.removeAttribute('open');
+    }
+    showModal() {
+        const dialog = this.shadowRoot.querySelector('dialog');
+        dialog.showModal();
+    }
+    toggle() {
+        const dialog = this.shadowRoot.querySelector('dialog');
+        if (dialog.open) {
+            dialog.close();
+        } else {
+            dialog.showModal();
+        }
     }
 
     /**
@@ -100,44 +217,34 @@ export class Inventory {
         this.updateInventory();
     }
 
-    toggleVisibility() {
-        const inventoryUI = getElement('box');
-        if (inventoryUI.style.visibility != "hidden") {
-            inventoryUI.style.visibility = "hidden"
-        } else {
-            this.updateInventory()
-            inventoryUI.style.visibility = "visible"
-        }
-    }
-
     init() {
 
 
-        this.inventoryBox.addEventListener("dragover", (event) => {
-            if (this.inventoryBox != event.target || !this.draggedItem || this.draggedItem.source == "inventory") { return; }
+        this.addEventListener("dragover", (event) => {
+            if (this != event.target || !this.draggedItem || this.draggedItem.source == "inventory") { return; }
             event.preventDefault();
         })
-        this.inventoryBox.addEventListener("dragenter", (event) => {
-            if (this.inventoryBox != event.target || !this.draggedItem || this.draggedItem.source == "inventory") { return; }
-            this.inventoryBox.classList.add("dragHover");
+        this.addEventListener("dragenter", (event) => {
+            if (this != event.target || !this.draggedItem || this.draggedItem.source == "inventory") { return; }
+            this.classList.add("dragHover");
             event.preventDefault();
         })
-        this.inventoryBox.addEventListener("dragleave", (event) => {
-            if (this.inventoryBox != event.target || !this.draggedItem || this.draggedItem.source == "inventory") { return; }
-            this.inventoryBox.classList.remove("dragHover");
+        this.addEventListener("dragleave", (event) => {
+            if (this != event.target || !this.draggedItem || this.draggedItem.source == "inventory") { return; }
+            this.classList.remove("dragHover");
             event.preventDefault();
         })
-        this.inventoryBox.addEventListener("drop", (event) => {
-            if (this.inventoryBox != event.target || !this.draggedItem || this.draggedItem.source == "inventory") { return; }
+        this.addEventListener("drop", (event) => {
+            if (this != event.target || !this.draggedItem || this.draggedItem.source == "inventory") { return; }
 
             dispatch(UnEquip(this.draggedItem.source));
-            this.inventoryBox.classList.remove("dragHover");
+            this.classList.remove("dragHover");
             this.updateInventory()
             event.preventDefault();
         })
 
         for (let slot in equipSlots) {
-            this.addDropListener(slot);
+            // this.addDropListener(slot);
         }
 
 
@@ -145,8 +252,8 @@ export class Inventory {
 
     updateInventory() {
 
-        while (this.inventoryBox.lastChild) {
-            this.inventoryBox.removeChild(this.inventoryBox.lastChild);
+        while (this.lastChild) {
+            this.removeChild(this.lastChild);
         }
         //Display items
         this.player.inventory.forEach(i => {
@@ -172,7 +279,7 @@ export class Inventory {
                 // This is called for inventory items only
                 // event.preventDefault()
             })
-            this.inventoryBox.appendChild(x);
+            this.appendChild(x);
         });
 
         
@@ -299,3 +406,4 @@ export class Inventory {
 
 }
 
+customElements.define('player-inventory', Inventory);

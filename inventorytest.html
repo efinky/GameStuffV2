@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset=UTF-8>
+        <script type="module">
+            import { Inventory } from "./inventory.js";
+            // toggle inventory
+            const inventory = document.getElementById("inventory");
+
+            // Pressing the "i" key will toggle the inventory
+            document.addEventListener("keydown", function(event) {
+                if (event.key === "i") {
+                    inventory.toggle();
+                }
+            });
+
+            // let inventory = new Inventory(box); 
+            // inventory.update([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], {});
+        </script>
+    </head>
+    <body style="position:fixed; padding:0; margin:0; top:0; left:0; width: 100%; height: 100%; box-sizing: border-box">
+        <player-inventory id="inventory"></player-inventory>
+    </body>
+</html>
+
