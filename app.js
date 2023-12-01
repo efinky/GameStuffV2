@@ -78,7 +78,7 @@ export async function run() {
   let worldState = await WorldState.init({
     map: "BasicMap.json",
     monsterSet: "Monsters.json",
-    playerSet: "Players.json",
+    playerSet: "Player.json",
   });
 
   // worldState.initItems(assets.mapCurrent);

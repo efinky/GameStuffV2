@@ -129,4 +129,14 @@ export class Serializer {
     };
     return JSON.parse(str, reviver);
   }
+
+  /**
+    * @template A
+    * @param {A} obj
+    * @param {T | undefined} [context=undefined] Default is `undefined`
+    * @returns {A}
+    */
+  clone(obj, context) {
+    return this.parse(this.stringify(obj, context), context);
+  }
 }

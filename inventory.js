@@ -1,12 +1,15 @@
 /** @typedef {import("./tiledLoader.js").EquipType} EquipType */
 /** @typedef {"head" | "leftHand" | "rightHand" | "torso" | "legs" | "leftFoot" | "rightFoot"} EquippableSlot */
 
+/** @typedef {{ id: number, image: HTMLImageElement, item: Item }} InventoryItem */
+/** @typedef {Record<EquippableSlot, InventoryItem|null>} EquippedItems */
+
 import { Player } from "./player.js";
 import { Item } from "./item.js";
-import { WorldState } from "./worldState.js";
+import { WorldState, serializer } from "./worldState.js";
 import { dispatch } from "./events.js";
 
-const template = document.createElement('template');
+const template = document.createElement("template");
 template.innerHTML = `
   <style>
     *, *:before, *:after {
@@ -105,305 +108,446 @@ template.innerHTML = `
 
 //Need to Dispatch drop and equip and unequip.
 
-/** 
-@param {string} source 
- @return {(state: WorldState) => void}  */
-const UnEquip = (source) => (state) => {
-    let equippedItem = state.player.equipped[equipSlots[source]];
-    if (equippedItem) {
-        delete state.player.equipped[equipSlots[source]];
-        state.player.inventory.push(equippedItem);
-    }
-}
-
+// const UnEquip = (source) => (state) => {
+//   let equippedItem = state.player.equipped[equipSlots[source]];
+//   if (equippedItem) {
+//     delete state.player.equipped[equipSlots[source]];
+//     state.inventory.push(equippedItem);
+//   }
+// };
 
 /** @param {string} id */
-function getElement(id) {
-    let elem = document.getElementById(id);
-    if (!elem) {
-        throw Error(`Failed to find element with id: ${id}`);
-    }
-    return elem;
-}
-
+// function getElement(id) {
+//     let elem = document.getElementById(id);
+//     if (!elem) {
+//         throw Error(`Failed to find element with id: ${id}`);
+//     }
+//     return elem;
+// }
 
 /** @type {{[key: string]: EquippableSlot}} */
 let equipSlots = {
-    personHead: "head",
-    personLeftHand: "leftHand",
-    personRightHand: "rightHand",
-    personTorso: "torso",
-    personLegs: "legs",
-    personLeftFoot: "leftFoot",
-    personRightFoot: "rightFoot",
-}
+  personHead: "head",
+  personLeftHand: "leftHand",
+  personRightHand: "rightHand",
+  personTorso: "torso",
+  personLegs: "legs",
+  personLeftFoot: "leftFoot",
+  personRightFoot: "rightFoot",
+};
 
 /**
-    *
-    * @param {EquipType} equipType
-    * @returns {EquippableSlot[]}
-    */
+ *
+ * @param {EquipType} equipType
+ * @returns {EquippableSlot[]}
+ */
 function equipableSlots(equipType) {
-    switch (equipType) {
-        case "Hand":
-            return ["leftHand", "rightHand"];
-        case "Chest":
-            return ["torso"];
-        case "Legs":
-            return ["legs"];
-        case "Feet":
-            return ["leftFoot", "rightFoot"];
-        default:
-            return [];
-    }
+  switch (equipType) {
+    case "Hand":
+      return ["leftHand", "rightHand"];
+    case "Chest":
+      return ["torso"];
+    case "Legs":
+      return ["legs"];
+    case "Feet":
+      return ["leftFoot", "rightFoot"];
+    default:
+      return [];
+  }
 }
 /**
-    *
-    * @param {EquipType} equipType
-    * @param {EquippableSlot} slot
-    * @returns
-    */
+ *
+ * @param {EquipType} equipType
+ * @param {EquippableSlot} slot
+ * @returns
+ */
 function equipableInSlot(equipType, slot) {
-    return equipableSlots(equipType).includes(slot);
+  return equipableSlots(equipType).includes(slot);
 }
 
 /**
  * @typedef {Object} DraggedItem
  * @property {HTMLElement} element
- * @property {number} item
- * @property {string} source
+ * @property {InventoryItem} inventoryItem
+ * @property {EquippableSlot|"inventory"} source
  */
 
 export class Inventory extends HTMLElement {
-    constructor() {
-        super();
-        /** @type {DraggedItem | null} */
-        this.draggedItem = null;
+  constructor() {
+    super();
 
-        this.attachShadow({ mode: 'open' }).appendChild(template.content.cloneNode(true));
+    
+
+    /** @type {InventoryItem[]} */
+    this.inventory = [];
+    /** @type {EquippedItems} */
+    this.playerEquipped = {
+      head: null,
+      leftHand: null,
+      rightHand: null,
+      torso: null,
+      legs: null,
+      leftFoot: null,
+      rightFoot: null,
+    };
+
+    /** @type {DraggedItem | null} */
+    this.draggedItem = null;
+
+    this.attachShadow({ mode: "open" }).appendChild(
+      template.content.cloneNode(true)
+    );
+    let inventoryBox = this.shadowRoot?.getElementById("inventoryBox");
+    if (!(inventoryBox instanceof HTMLElement)) {
+      throw Error("Failed to find inventoryBox");
+    }
+    let dialog = this.shadowRoot?.getElementById("inventoryDialog");
+    if (!(dialog instanceof HTMLDialogElement)) {
+      throw Error("Failed to find inventoryDialog");
+    }
+    this.dialog = dialog;
+    this.inventoryBox = inventoryBox;
+  }
+
+  connectedCallback() {
+    this.init();
+  }
+  get open() {
+    return this.dialog.open;
+    // return this.hasAttribute('open');
+  }
+  close() {
+    this.dialog.close();
+    // this.removeAttribute('open');
+  }
+  showModal() {
+    this.dialog.showModal();
+  }
+  toggle() {
+    if (this.dialog.open) {
+      this.dialog.close();
+    } else {
+      this.dialog.showModal();
+    }
+  }
+
+  init() {
+    this.inventoryBox.addEventListener("dragover", (event) => {
+      if (
+        this.inventoryBox != event.target ||
+        !this.draggedItem ||
+        this.draggedItem.source == "inventory"
+      ) {
+        return;
+      }
+      event.preventDefault();
+    });
+    this.inventoryBox.addEventListener("dragenter", (event) => {
+      console.log("Init dragEnter");
+      if (
+        this.inventoryBox != event.target ||
+        !this.draggedItem ||
+        this.draggedItem.source == "inventory"
+      ) {
+        return;
+      }
+      this.inventoryBox.classList.add("dragHover");
+      
+      event.preventDefault();
+    });
+    this.inventoryBox.addEventListener("dragleave", (event) => {
+      console.log("Init dragleave");
+      if (
+        this.inventoryBox != event.target ||
+        !this.draggedItem ||
+        this.draggedItem.source == "inventory"
+      ) {
+        return;
+      }
+      this.inventoryBox.classList.remove("dragHover");
+      event.preventDefault();
+    });
+    this.inventoryBox.addEventListener("drop", (event) => {
+      console.log("Init drop");
+      console.log("drop", this.draggedItem)
+      //if the item came from inventory don't update.
+      /* this is dumb... we should be able to organize our inventory! ;p*/
+      if (
+        this.inventoryBox != event.target ||
+        !this.draggedItem ||
+        this.draggedItem.source == "inventory"
+      ) {
+        return;
+      }
+      //if source came from an equpped slot then move from equippped slot to inventoryBox
+      const sourceId = this.draggedItem.source;
+      
+      this.unEquip(this.draggedItem.inventoryItem, sourceId);
+      //remove dragHover display
+      this.inventoryBox.classList.remove("dragHover");
+      this.#update();
+      event.preventDefault();
+    });
+
+    for (let slot in equipSlots) {
+      this.addDropListener(slot);
     }
 
-    connectedCallback() {
-        this.init();
+  }
+
+  /**
+   * 
+   * @param {InventoryItem} inventoryItem 
+   * @param {EquippableSlot} slot 
+   */
+  equipFromInventory(inventoryItem, slot) {
+    // Source of item is player's inventory
+    let itemId = inventoryItem.id;
+    // remove item from inventory by Id
+    let itemIndex = this.inventory.findIndex((item) => item.id == itemId);
+    if (itemIndex == -1) {
+      console.log("Item not found in inventory", itemId, this.inventory);
+      return;
     }
-    get open() {
-        const dialog = this.shadowRoot.querySelector('dialog');
-        return dialog.open;
-        // return this.hasAttribute('open');
+    this.inventory.splice(itemIndex, 1);
+
+    this.playerEquipped[slot] = inventoryItem;
+    this.draggedItem = null;
+    this.#update();
+  }
+
+  /**
+   *
+   * @param {InventoryItem} inventoryItem
+   * @param {EquippableSlot} oldSlot
+   * @param {EquippableSlot} newSlot
+   */
+  equipFromSlot(inventoryItem, oldSlot, newSlot) {
+    // verify this is the item we think it is
+    if (this.playerEquipped[oldSlot]?.id !== inventoryItem.id) { 
+      return;
     }
-    close(){
-        const dialog = this.shadowRoot.querySelector('dialog');
-        dialog.close();
-        // this.removeAttribute('open');
+    const existingItem = this.playerEquipped[newSlot];
+    if (existingItem) {
+      // if there is already an item in the slot, move it to the inventory
+      this.inventory.push(existingItem);
     }
-    showModal() {
-        const dialog = this.shadowRoot.querySelector('dialog');
-        dialog.showModal();
+    // move the item from the old slot to the new slot
+    this.playerEquipped[newSlot] = this.playerEquipped[oldSlot];
+    this.playerEquipped[oldSlot] = null;
+
+    this.draggedItem = null;
+    this.#update();
+  }
+
+  /**
+   * @param {InventoryItem} inventoryItem 
+   * @param {EquippableSlot} slot 
+   */
+  unEquip(inventoryItem, slot) {
+    const item = this.playerEquipped[slot];
+    if (!item || item.id != inventoryItem.id) {
+      return;
     }
-    toggle() {
-        const dialog = this.shadowRoot.querySelector('dialog');
-        if (dialog.open) {
-            dialog.close();
-        } else {
-            dialog.showModal();
+    this.playerEquipped[slot] = null;
+    this.inventory.push(item);
+    this.draggedItem = null;
+    this.#update();
+  }
+
+
+  /**
+   *
+   * @param {InventoryItem[]} inventory
+   * @param {EquippedItems} playerEquipped
+   * @returns
+   */
+
+  update(inventory, playerEquipped) {
+    this.inventory = inventory;
+    this.playerEquipped = playerEquipped;
+    this.#update();
+  }
+
+  #update() {
+    while (this.inventoryBox.lastChild) {
+      this.inventoryBox.removeChild(this.inventoryBox.lastChild);
+    }
+    //this.player = serializer.clone(worldState.players[clientId]);
+    //this.worldState = worldState;
+
+    //Display items
+    console.log("pe", this.playerEquipped)
+
+
+    // Create all the elements for the inventory items
+    this.inventory.forEach((inventoryItem) => {
+      let image = inventoryItem.image;
+      let item = inventoryItem.item;
+      if (!(image instanceof HTMLElement)) {
+        console.log("Not an element: ", image);
+        return;
+      }
+      image.draggable = true;
+      image.addEventListener("dragstart", (event) => {
+        console.log("dragstart");
+        if (!(event.target instanceof HTMLElement)) {
+          console.log("empty target", event);
+          return;
         }
-    }
+        this.draggedItem = {
+          element: event.target,
+          inventoryItem: inventoryItem,
+          source: "inventory",
+        };
+        // This is called for inventory items only
+        // event.preventDefault()
+      });
+      this.inventoryBox.appendChild(image);
+    });
 
-    /**
-        * @param {Player} player
-        */
-    updatePlayer(player) {
-        this.player = player;
-        this.updateInventory();
-    }
+    // Create all the elements for the equipped items
+    for (let slot in equipSlots) {
+      const elem = this.getElement(slot);
+  
+      // Remove all children of the inventory slot element (at time of writing
+      // there should only be one child)
+      while (elem.lastChild) {
+        elem.removeChild(elem.lastChild);
+      }
 
-    init() {
-
-
-        this.addEventListener("dragover", (event) => {
-            if (this != event.target || !this.draggedItem || this.draggedItem.source == "inventory") { return; }
-            event.preventDefault();
-        })
-        this.addEventListener("dragenter", (event) => {
-            if (this != event.target || !this.draggedItem || this.draggedItem.source == "inventory") { return; }
-            this.classList.add("dragHover");
-            event.preventDefault();
-        })
-        this.addEventListener("dragleave", (event) => {
-            if (this != event.target || !this.draggedItem || this.draggedItem.source == "inventory") { return; }
-            this.classList.remove("dragHover");
-            event.preventDefault();
-        })
-        this.addEventListener("drop", (event) => {
-            if (this != event.target || !this.draggedItem || this.draggedItem.source == "inventory") { return; }
-
-            dispatch(UnEquip(this.draggedItem.source));
-            this.classList.remove("dragHover");
-            this.updateInventory()
-            event.preventDefault();
-        })
-
-        for (let slot in equipSlots) {
-            // this.addDropListener(slot);
+      // Create the element for the equipped item
+      let inventoryItem = this.playerEquipped[equipSlots[slot]];
+      if (inventoryItem) {
+        let item = inventoryItem.item;
+        let image = inventoryItem.image;
+        if (!(image instanceof HTMLElement)) {
+          console.log("Not an element: ", image);
+          return;
         }
 
-
-    }
-
-    updateInventory() {
-
-        while (this.lastChild) {
-            this.removeChild(this.lastChild);
-        }
-        //Display items
-        this.player.inventory.forEach(i => {
-            let item = this.worldState.items[i]
-            let x = this.worldState.itemImages[item.tileNumber].cloneNode(false);
-            if (!(x instanceof HTMLElement)) {
-                console.log("Not an element: ", x);
-                return;
-            }
-            // x.dataset = {
-            //     "tileNumber":i.tileNumber,
-            //     "name":i.name
-            // };
-            x.dataset.tileNumber = "" + item.tileNumber;
-            x.dataset.name = item.name;
-            x.draggable = true;
-            x.addEventListener("dragstart", (event) => {
-                if (!(event.target instanceof HTMLElement)) {
-                    console.log("empty target", event);
-                    return;
-                }
-                this.draggedItem = { element: event.target, item: i, source: "inventory" };
-                // This is called for inventory items only
-                // event.preventDefault()
-            })
-            this.appendChild(x);
+        image.draggable = true;
+        image.addEventListener("dragstart", (event) => {
+          console.log("dragstart");
+          if (!(event.target instanceof HTMLElement)) {
+            console.log("empty target", event);
+            return;
+          }
+          if (!inventoryItem) {
+            console.log("Empty Item", this.playerEquipped, equipSlots[slot]);
+            return;
+          }
+          this.draggedItem = {
+            element: event.target,
+            inventoryItem: inventoryItem,
+            source: "inventory",
+          };
+          // This is called for inventory items only
+          // event.preventDefault()
         });
+        elem.appendChild(image);
+      }
+    }
+  }
 
-        
-        for (let slot in equipSlots) {
-            const elem = document.getElementById(slot);
-            if (!elem) {
-                return;
-            }
-            // There is a loop here, but it should only be one
-            while (elem.lastChild) {
-                elem.removeChild(elem.lastChild);
-            }
-            let i = this.player.equipped[equipSlots[slot]];
-            if (i) {
-                let item = this.worldState.items[i];
-                let x = this.worldState.itemImages[item.tileNumber].cloneNode(false);
-                if (!(x instanceof HTMLElement)) {
-                    console.log("Not an element: ", x);
-                    return;
-                }
-                x.dataset.tileNumber = "" + item.tileNumber;
-                x.dataset.name = item.name;
-                x.draggable = true;
-                x.addEventListener("dragstart", (event) => {
-                    if (!(event.target instanceof HTMLElement)) {
-                        console.log("empty target", event);
-                        return;
-                    }
-                    if (!i) {
-                        console.log("Empty Item", this.player.equipped, equipSlots[slot]);
-                        return;
-                    }
-                    this.draggedItem = { element: event.target, item: i, source: "inventory" };
-                    // This is called for inventory items only
-                    // event.preventDefault()
-                })
-                elem.appendChild(x)
-            }
+  /**
+   * @param {string} id
+   */
+  getElement(id) {
+    let elem = this.shadowRoot?.getElementById(id);
+    if (!elem) {
+      throw Error(`Failed to find element with id: ${id}`);
+    }
+    return elem;
+  }
+
+  /**
+   * Add a drop listener for an equipment slot
+   * @param {string} id
+   */
+  addDropListener(id) {
+    
+    const elem = this.getElement(id);
+    elem.addEventListener("dragstart", (event) => {
+      if (!(event.target instanceof HTMLElement)) {
+        console.log("Target not an element: ", event);
+        return;
+      }
+        let item = this.playerEquipped[equipSlots[id]];
+      
+        if (!item) {
+          console.log("item is null", this.playerEquipped, equipSlots, id);
+          return;
         }
-    }
-
-
-    /**
-    * Add a drop listener for an equipment slot
-    * @param {string} id
-    */
-    addDropListener(id) {
-        const elem = getElement(id);
-        elem.addEventListener("dragstart", (event) => {
-            if (!(event.target instanceof HTMLElement)) {
-                console.log("Target not an element: ", event);
-                return;
-            }
-            let item = this.player.equipped[equipSlots[id]];
-            if (!item) {
-                console.log("item is null", this.player.equipped, equipSlots, id)
-                return;
-            }
-            this.draggedItem = { element: event.target, item: item, source: id }
-            //delete this.player.equipped[equipSlots[id]];
-            // This is called for equip slots only
-            // event.preventDefault();
-        })
-        elem.addEventListener("dragover", (event) => {
-            event.preventDefault();
-        })
-        elem.addEventListener("dragenter", (event) => {
-            event.preventDefault();
-            // let item = mapCurrent.getItemByTileNumber(this.draggedItem.element.dataset.tileNumber);
-            if (!this.draggedItem || !(event.target instanceof HTMLElement)) {
-                return;
-            }
-            let i = this.draggedItem.item;
-            let item = this.worldState.items[i];
-            if (id in equipSlots && !this.player.equipped[equipSlots[id]] && event.target.id == id && equipableInSlot(item.equippedType, equipSlots[id])) {
-                event.target.classList.add("dragHover");
-            }
-        })
-        elem.addEventListener("dragleave", (event) => {
-            event.preventDefault();
-            if (!this.draggedItem || !(event.target instanceof HTMLElement)) {
-                return;
-            }
-            // let item = mapCurrent.getItemByTileNumber(this.draggedItem.element.dataset.tileNumber);
-            let i = this.draggedItem.item;
-            let item = this.worldState.items[i];
-            if (id in equipSlots && !this.player.equipped[equipSlots[id]] && event.target.id == id && equipableInSlot(item.equippedType, equipSlots[id])) {
-                event.target.classList.remove("dragHover");
-            }
-        })
-        elem.addEventListener("drop", (event) => {
-            event.preventDefault();
-            if (!this.draggedItem || !(event.target instanceof HTMLElement)) {
-                return;
-            }
-            // let item = mapCurrent.getItemByTileNumber(this.draggedItem.element.dataset.tileNumber);
-            let i = this.draggedItem.item;
-            let item = this.worldState.items[i];
-            if (id in equipSlots && !this.player.equipped[equipSlots[id]] && event.target.id == id && equipableInSlot(item.equippedType, equipSlots[id])) {
-                // this.draggedItem.parentNode.removeChild( this.draggedItem );
-
-                if (this.draggedItem.source == "inventory") {
-                    let inventory = []
-                    let removed = false
-                    for (let i in this.player.inventory) {
-                        if (!removed && this.worldState.items[this.player.inventory[i]].tileNumber == item.tileNumber) {
-                            removed = true;
-                        } else {
-                            inventory.push(this.player.inventory[i]);
-                        }
-                    }
-                    this.player.inventory = inventory;
-                } else {
-                    delete this.player.equipped[equipSlots[this.draggedItem.source]];
-                }
-                this.player.equipped[equipSlots[id]] = i;
-                // event.target.appendChild( this.draggedItem.element );
-                event.target.classList.remove("dragHover");
-                this.updateInventory();
-            }
-        })
-    }
-
-
+        if (id in equipSlots) {
+          this.draggedItem = { element: event.target, inventoryItem: item, source: equipSlots[id] };
+        }
+        //delete this.player.equipped[equipSlots[id]];
+        // This is called for equip slots only
+        // event.preventDefault();
+    });
+    elem.addEventListener("dragover", (event) => {
+      event.preventDefault();
+    });
+    elem.addEventListener("dragenter", (event) => {
+      event.preventDefault();
+      // let item = mapCurrent.getItemByTileNumber(this.draggedItem.element.dataset.tileNumber);
+      if (!this.draggedItem || !(event.target instanceof HTMLElement)) {
+        return;
+      }
+      let item = this.draggedItem.inventoryItem.item;
+      if (
+        id in equipSlots &&
+        !this.playerEquipped[equipSlots[id]] &&
+        event.target.id == id &&
+        equipableInSlot(item.equippedType, equipSlots[id])
+      ) {
+        event.target.classList.add("dragHover");
+      }
+    });
+    elem.addEventListener("dragleave", (event) => {
+      event.preventDefault();
+      if (!this.draggedItem || !(event.target instanceof HTMLElement)) {
+        return;
+      }
+      // let item = mapCurrent.getItemByTileNumber(this.draggedItem.element.dataset.tileNumber);
+      let item = this.draggedItem.inventoryItem.item;
+      if (
+        id in equipSlots &&
+        !this.playerEquipped[equipSlots[id]] &&
+        event.target.id == id &&
+        equipableInSlot(item.equippedType, equipSlots[id])
+      ) {
+        event.target.classList.remove("dragHover");
+      }
+    });
+    //Player is equipping an item from their inventory.  Item is type ItemInventory
+    elem.addEventListener("drop", (event) => {
+      event.preventDefault();
+      if (!this.draggedItem || !(event.target instanceof HTMLElement)) {
+        return;
+      }
+      //checking that the equippedType of item matches equippedType of slot
+      let item = this.draggedItem.inventoryItem;
+      if (
+        id in equipSlots &&
+        !this.playerEquipped[equipSlots[id]] &&
+        event.target.id == id &&
+        equipableInSlot(item.item.equippedType, equipSlots[id])
+      ) {
+        if (this.draggedItem.source == "inventory") {
+          // if the source of the item is the player's inventory
+          this.equipFromInventory(item, equipSlots[id]);
+        } else {
+          // otherwise the source of the item is another player's equipped items
+          this.equipFromSlot(item, this.draggedItem.source, equipSlots[id]);
+        }
+        console.log(item);
+        event.target.classList.remove("dragHover");
+        this.#update();
+      }
+    });
+  }
 }
 
-customElements.define('player-inventory', Inventory);
+customElements.define("player-inventory", Inventory);
