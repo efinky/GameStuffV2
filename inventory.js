@@ -243,7 +243,6 @@ export class Inventory extends HTMLElement {
       event.preventDefault();
     });
     this.inventoryBox.addEventListener("dragenter", (event) => {
-      console.log("Init dragEnter");
       if (
         this.inventoryBox != event.target ||
         !this.draggedItem ||
@@ -256,7 +255,6 @@ export class Inventory extends HTMLElement {
       event.preventDefault();
     });
     this.inventoryBox.addEventListener("dragleave", (event) => {
-      console.log("Init dragleave");
       if (
         this.inventoryBox != event.target ||
         !this.draggedItem ||
@@ -268,10 +266,8 @@ export class Inventory extends HTMLElement {
       event.preventDefault();
     });
     this.inventoryBox.addEventListener("drop", (event) => {
-      console.log("Init drop");
-      console.log("drop", this.draggedItem)
+      this.inventoryBox.classList.remove("dragHover");
       //if the item came from inventory don't update.
-      /* this is dumb... we should be able to organize our inventory! ;p*/
       if (
         this.inventoryBox != event.target ||
         !this.draggedItem ||
@@ -281,11 +277,10 @@ export class Inventory extends HTMLElement {
       }
       //if source came from an equpped slot then move from equippped slot to inventoryBox
       const sourceId = this.draggedItem.source;
+      const item = this.draggedItem.inventoryItem;
+      this.draggedItem = null;
       
-      this.unEquip(this.draggedItem.inventoryItem, sourceId);
-      //remove dragHover display
-      this.inventoryBox.classList.remove("dragHover");
-      this.#update();
+      this.unEquip(item, sourceId);
       event.preventDefault();
     });
 
@@ -301,6 +296,11 @@ export class Inventory extends HTMLElement {
    * @param {EquippableSlot} slot 
    */
   equipFromInventory(inventoryItem, slot) {
+
+    if (!equipableInSlot(inventoryItem.item.equippedType, slot)) {
+      console.log("Item not equipable in slot", inventoryItem, slot);
+      return;
+    }
     // Source of item is player's inventory
     let itemId = inventoryItem.id;
     // remove item from inventory by Id
@@ -310,6 +310,11 @@ export class Inventory extends HTMLElement {
       return;
     }
     this.inventory.splice(itemIndex, 1);
+
+    const existingItem = this.playerEquipped[slot];
+    if (existingItem) {
+      this.inventory.push(existingItem);
+    }
 
     this.playerEquipped[slot] = inventoryItem;
     this.draggedItem = null;
@@ -323,6 +328,11 @@ export class Inventory extends HTMLElement {
    * @param {EquippableSlot} newSlot
    */
   equipFromSlot(inventoryItem, oldSlot, newSlot) {
+
+    if (!equipableInSlot(inventoryItem.item.equippedType, newSlot) || oldSlot == newSlot) {
+      console.log("Item not equipable in slot", inventoryItem, newSlot);
+      return;
+    }
     // verify this is the item we think it is
     if (this.playerEquipped[oldSlot]?.id !== inventoryItem.id) { 
       return;
@@ -346,7 +356,7 @@ export class Inventory extends HTMLElement {
    */
   unEquip(inventoryItem, slot) {
     const item = this.playerEquipped[slot];
-    if (!item || item.id != inventoryItem.id) {
+    if (!item || item.id !== inventoryItem.id) {
       return;
     }
     this.playerEquipped[slot] = null;
@@ -390,7 +400,6 @@ export class Inventory extends HTMLElement {
       }
       image.draggable = true;
       image.addEventListener("dragstart", (event) => {
-        console.log("dragstart");
         if (!(event.target instanceof HTMLElement)) {
           console.log("empty target", event);
           return;
@@ -428,7 +437,6 @@ export class Inventory extends HTMLElement {
 
         image.draggable = true;
         image.addEventListener("dragstart", (event) => {
-          console.log("dragstart");
           if (!(event.target instanceof HTMLElement)) {
             console.log("empty target", event);
             return;
@@ -510,16 +518,7 @@ export class Inventory extends HTMLElement {
       if (!this.draggedItem || !(event.target instanceof HTMLElement)) {
         return;
       }
-      // let item = mapCurrent.getItemByTileNumber(this.draggedItem.element.dataset.tileNumber);
-      let item = this.draggedItem.inventoryItem.item;
-      if (
-        id in equipSlots &&
-        !this.playerEquipped[equipSlots[id]] &&
-        event.target.id == id &&
-        equipableInSlot(item.equippedType, equipSlots[id])
-      ) {
-        event.target.classList.remove("dragHover");
-      }
+      event.target?.classList?.remove("dragHover");
     });
     //Player is equipping an item from their inventory.  Item is type ItemInventory
     elem.addEventListener("drop", (event) => {
@@ -527,24 +526,17 @@ export class Inventory extends HTMLElement {
       if (!this.draggedItem || !(event.target instanceof HTMLElement)) {
         return;
       }
-      //checking that the equippedType of item matches equippedType of slot
-      let item = this.draggedItem.inventoryItem;
-      if (
-        id in equipSlots &&
-        !this.playerEquipped[equipSlots[id]] &&
-        event.target.id == id &&
-        equipableInSlot(item.item.equippedType, equipSlots[id])
-      ) {
-        if (this.draggedItem.source == "inventory") {
-          // if the source of the item is the player's inventory
-          this.equipFromInventory(item, equipSlots[id]);
-        } else {
-          // otherwise the source of the item is another player's equipped items
-          this.equipFromSlot(item, this.draggedItem.source, equipSlots[id]);
-        }
-        console.log(item);
-        event.target.classList.remove("dragHover");
-        this.#update();
+      event.target?.classList?.remove("dragHover");
+      const item = this.draggedItem.inventoryItem;
+      const source = this.draggedItem.source;
+      this.draggedItem = null;
+
+      if (source == "inventory") {
+        // if the source of the item is the player's inventory
+        this.equipFromInventory(item, equipSlots[id]);
+      } else {
+        // otherwise the source of the item is another player's equipped items
+        this.equipFromSlot(item, source, equipSlots[id]);
       }
     });
   }
