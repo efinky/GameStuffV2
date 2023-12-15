@@ -35,6 +35,7 @@ export const serializer = new Serializer([
   Monster,
   Vector2d,
   PCG32,
+  Item,
 ]);
 
 export class WorldState {
@@ -122,6 +123,11 @@ export class WorldState {
     worldState.loadMapItems(assets.items);
 
     return worldState;
+  }
+
+  /** @param {Vector2d} pos */
+  getItemOnGround(pos) {
+    return this.itemsOnGround.find((e) => e.pos.distance(pos) < 32);
   }
 
   /**

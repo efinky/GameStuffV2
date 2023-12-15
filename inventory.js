@@ -103,11 +103,12 @@ template.innerHTML = `
             <div id="personRightFoot" style="grid-area: rightfoot;"></div>
         </div>
     </div>
+    
 </dialog>
 `;
 
 //Need to Dispatch drop and equip and unequip.
-
+//<button type="button" onclick="test()">Click Me!</button>
 // const UnEquip = (source) => (state) => {
 //   let equippedItem = state.player.equipped[equipSlots[source]];
 //   if (equippedItem) {
@@ -154,6 +155,9 @@ function equipableSlots(equipType) {
     default:
       return [];
   }
+}
+function test () {
+  console.log("test");
 }
 /**
  *
@@ -319,6 +323,8 @@ export class Inventory extends HTMLElement {
     this.playerEquipped[slot] = inventoryItem;
     this.draggedItem = null;
     this.#update();
+
+    this.dispatchEvent(new CustomEvent("equip-from-inventory", { detail: { inventoryItem, slot } }));
   }
 
   /**
@@ -334,7 +340,7 @@ export class Inventory extends HTMLElement {
       return;
     }
     // verify this is the item we think it is
-    if (this.playerEquipped[oldSlot]?.id !== inventoryItem.id) { 
+    if (this.playerEquipped[oldSlot]?.id !== inventoryItem.id) {
       return;
     }
     const existingItem = this.playerEquipped[newSlot];
@@ -348,11 +354,12 @@ export class Inventory extends HTMLElement {
 
     this.draggedItem = null;
     this.#update();
+    this.dispatchEvent(new CustomEvent("equip-from-slot", { detail: { inventoryItem, slot: newSlot } }));
   }
 
   /**
-   * @param {InventoryItem} inventoryItem 
-   * @param {EquippableSlot} slot 
+   * @param {InventoryItem} inventoryItem
+   * @param {EquippableSlot} slot
    */
   unEquip(inventoryItem, slot) {
     const item = this.playerEquipped[slot];
@@ -363,6 +370,7 @@ export class Inventory extends HTMLElement {
     this.inventory.push(item);
     this.draggedItem = null;
     this.#update();
+    this.dispatchEvent(new CustomEvent("unequip", { detail: { inventoryItem, slot } }));
   }
 
 
@@ -418,7 +426,7 @@ export class Inventory extends HTMLElement {
     // Create all the elements for the equipped items
     for (let slot in equipSlots) {
       const elem = this.getElement(slot);
-  
+
       // Remove all children of the inventory slot element (at time of writing
       // there should only be one child)
       while (elem.lastChild) {

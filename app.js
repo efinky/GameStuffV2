@@ -121,12 +121,14 @@ export async function run() {
 
   const player = worldState.players[networkHandler.clientId];
 
+  const inventory = document.getElementById("inventory");
 
-  let inventory = new Inventory(
-    getElement("inventoryBox"),
-    player,
-    worldState.itemImages
-  );
+
+  // let inventory = new Inventory(
+  //   getElement("inventoryBox"),
+  //   player,
+  //   worldState.itemImages
+  // );
 
   let canvas = document.getElementById("canvas");
   if (!(canvas instanceof HTMLCanvasElement)) {
@@ -137,10 +139,21 @@ export async function run() {
   document.addEventListener("keydown", (event) => {
     keystate[event.keyCode] = true;
     if (event.key == "i") {
-      inventory.toggleVisibility();
+      if (inventory instanceof Inventory) {
+          inventory.toggle();
+      }
       event.preventDefault();
     } else if (event.key == "g") {
-      Events.dispatch(Events.PickupItem(worldState.map));
+      // Events.dispatch(Events.PickupItem(worldState.map, player.clientID));
+      const player = worldState.players[networkHandler.clientId];
+      console.log(player);
+      let id = worldState.getItemOnGround(player.characterPos_w)?.id;
+      if (id) {
+        networkHandler.sendEvent({
+          type: "pickupItem",
+          id: id
+        });
+      }
       event.preventDefault();
     } else if (event.key == "a") {
       //find direction player is facing
@@ -232,7 +245,7 @@ export async function run() {
     * @type {Watcher<WorldState, any>[]}
    */
   const watchers = [new Watcher((state) => state.players[networkHandler.clientId], (oldPlayer, newPlayer) => {
-    inventory.updatePlayer(newPlayer);
+    // inventory.updatePlayer(newPlayer);
   })]
   /**
    *

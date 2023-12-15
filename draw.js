@@ -33,6 +33,9 @@ export function draw(worldState, localClientId) {
   let mapRect = new Rect(new Vector2d(0, 0), mapSize.sub(canvasSize));
 
   let player = worldState.players[localClientId];
+  if (!player) {
+    return;
+  }
 
   // Top left corner of the viewable area, in world coordinates
   //console.log(player)
