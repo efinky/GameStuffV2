@@ -1,8 +1,8 @@
-import { Character } from "./character.js";
-import { Monster } from "./monster.js";
-import { playerAttack } from "./movement.js";
-import { WorldMap } from "./worldMap.js";
-import { WorldState } from "./worldState.js";
+import { Character } from "./game-state/character.js";
+import { Monster } from "./game-state/monster.js";
+import { playerAttack } from "./game-state/movement.js";
+import { WorldMap } from "./game-state/worldMap.js";
+import { WorldState } from "./game-state/worldState.js";
 /** @typedef {{eventType: "monsterDied", monster: Monster}} WorldEvent */
 
 // const monsterDied = (monster) => { type: "monsterDied", monster};

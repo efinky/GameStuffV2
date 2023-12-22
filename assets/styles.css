@@ -1,0 +1,220 @@
+:root {
+  --background: #545e37;
+  --text: #f5f5f5;
+  --border: #4b5320;
+  --shadow: rgba(0, 0, 0, 0.3);
+  --link-color: #8b4513;
+  --placeholder: #a9a9a9;
+  --highlight: #4863A0;
+  --disabled: #505050;
+  --input-background: #7d7d7d;
+  --focus-outline: #4863A0;
+  --button: #8b4513;
+  --button-text: #ffffff;
+}
+
+/* Reset box-sizing */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Buttons have pointer cursors */
+
+button:enabled:hover,
+[role="button"]:not([aria-disabled="true"]):hover,
+input[type="submit"]:enabled:hover,
+input[type="reset"]:enabled:hover,
+input[type="button"]:enabled:hover,
+label[type="button"]:hover {
+  cursor: pointer;
+  background-color: var(--highlight);
+}
+
+button,
+input[type="submit"],
+input[type="button"],
+input[type="reset"],
+[role="button"],
+label[type="button"] {
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 16px;
+  line-height: 1;
+  transition: background-color 0.3s;
+  background-color: var(--button);
+  color: var(--button-text);
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  /* hide the scrollbar, also prevents scrolling (even though content fits) in
+  safari */
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  background-color: var(--background);
+  font-family: Arial, sans-serif;
+  color: var(--text);
+}
+
+dialog {
+  margin: 0;
+  width: 30%;
+  min-width: fit-content;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: var(--background);
+  box-shadow: 0 4px 8px var(--shadow);
+  border: 1px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0%, 1fr));
+  grid-gap: 10px;
+  padding: 10px;
+}
+
+.flex-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.flex-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.settings-btn {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 10px;
+  font-size: 32px;
+  line-height: 1;
+  aspect-ratio: 1/1;
+  background-color: var(--link-color);
+  color: var(--button-text);
+}
+
+form>*:not(:last-child) {
+  margin-bottom: 10px;
+}
+form > p {
+  margin-top: 0;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--text);
+}
+
+input[type="text"] {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background-color: var(--input-background);
+  color: var(--text);
+}
+
+.main-menu {
+  max-width: 400px;
+  margin: 0 auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 80vh
+}
+
+.main-menu>* {
+  width: 100%;
+  font-size: 32px;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+responsive-canvas {
+  display: block;
+  width: 100%;
+  height: 100vh;
+}
+
+/* Main scoreboard container */
+.scoreboard {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: var(--shadow);
+  color: var(--text);
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px var(--shadow);
+  font-family: 'Arial', sans-serif;
+  width: 170px;
+}
+
+/* Individual player score entry */
+.score-entry {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Last entry shouldn't have a bottom border */
+.score-entry:last-child {
+  /* border-bottom: none; */
+  margin-bottom: 0;
+}
+
+.player-name {
+  font-weight: bold;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-score {
+  color: var(--link-color)
+}
+
+/* copied from pico.css */
+.spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 0.1875em solid currentColor;
+  border-radius: 1em;
+  border-right-color: transparent;
+  content: "";
+  vertical-align: text-bottom;
+  vertical-align: -0.125em;
+  animation: spinner 0.75s linear infinite;
+  opacity: 0.5;
+}
+
+@keyframes spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
