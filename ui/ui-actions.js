@@ -5,15 +5,14 @@ import { WorldState } from "../game-state/worldState.js";
 import { transitionError, transitionPlaying } from "./ui-state.js";
 
 let initialWorldState = {
-    map: "BasicMap.json",
-    monsterSet: "Monsters.json",
-    playerSet: "Player.json",
+    map: "../assets/BasicMap.json",
+    monsterSet: "../assets/Monsters.json",
+    playerSet: "../assets/Player.json",
 }
 
 export async function singlePlayerGame() {
-  const gameState = await WorldState.init(initialWorldState);
-
   try {
+    const gameState = await WorldState.init(initialWorldState);
     const { networkedGame } = await NetworkedGame.singlePlayerGame(gameState);
 
     return transitionPlaying("", networkedGame, gameState);
@@ -24,9 +23,8 @@ export async function singlePlayerGame() {
 }
 
 export async function hostGame() {
-  const gameState = await WorldState.init(initialWorldState);
-
   try {
+    const gameState = await WorldState.init(initialWorldState);
     const { networkedGame, token } = await NetworkedGame.hostGame(gameState);
 
     return transitionPlaying(token, networkedGame, gameState);

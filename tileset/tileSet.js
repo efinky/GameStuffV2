@@ -9,7 +9,7 @@ export class TileSet {
     */
     static async load(path) {
         /** @type {Tiled.Tileset} */
-        let data = await (await fetch(path)).json();
+        let data = await (await fetch("assets/" + path)).json();
         return new TileSet(await convertTileset(data));
     }
 

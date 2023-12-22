@@ -18,7 +18,7 @@ export function renderMainMenu(element, state) {
     element,
     html`
       <div class="main-menu flex-column">
-        <h1>Tank Game!</h1>
+        <h1>Fantasy Game</h1>
         <button class="btn" id="singlePlayerButton">Single Player</button>
         <button class="btn" id="multiplayerButton">Host Game</button>
       </div>
