@@ -12,14 +12,15 @@ let worldState;
 
 /** 
  @param {WorldMap}  map
+ @param {number} clientID
  @return {(state: WorldState) => void } */
-export const PickupItem = (map) => (state) => {
-  const coord = map.getLinearCoord(state.player.characterPos_w);
+export const PickupItem = (map, clientID) => (state) => {
+  const coord = map.getLinearCoord(state.players[clientID].characterPos_w);
   console.log("PickupItem", coord);
   let item = state.items[coord];
   if (item) {
     delete state.items[coord];
-    state.player.inventory.push(item);
+    state.players[clientID].inventory.push(item);
   }
 };
 /**

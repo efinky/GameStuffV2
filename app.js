@@ -146,13 +146,16 @@ export async function run() {
     } else if (event.key == "g") {
       // Events.dispatch(Events.PickupItem(worldState.map, player.clientID));
       const player = worldState.players[networkHandler.clientId];
-      console.log(player);
       let id = worldState.getItemOnGround(player.characterPos_w)?.id;
+      console.log(id)
       if (id) {
         networkHandler.sendEvent({
           type: "pickupItem",
           id: id
         });
+      }
+      else {
+        console.log("NO ITEMS FOR YOU!")
       }
       event.preventDefault();
     } else if (event.key == "a") {
@@ -239,14 +242,57 @@ export async function run() {
   );
   window.requestAnimationFrame(onFrame);
 
+  /**
+   * @param {number} id
+   */
+  function inventoryItemFromId(id) {
+    const item = worldState.items[id];
+    
+    const image = /** @type {HTMLImageElement} */(worldState.itemImages[item.tileNumber].cloneNode(false));
+    return {
+      id,
+      image,
+      item,
+    };
+  }
 
-  // TODO FIX THIS Maybe use a class instead so that the generics work between getter and onChange
+  /**
+   * @param {Player} player
+   */
+  function equippedItemsFromPlayer(player) {
+    player.equipped.head
+    return {
+      "head": player.equipped.head ? inventoryItemFromId(player.equipped.head) : null,
+      "leftHand": player.equipped.leftHand ? inventoryItemFromId(player.equipped.leftHand) : null,
+      "rightHand": player.equipped.rightHand ? inventoryItemFromId(player.equipped.rightHand) : null,
+      "torso": player.equipped.torso? inventoryItemFromId(player.equipped.torso): null,
+      "legs": player.equipped.legs? inventoryItemFromId(player.equipped.legs): null,
+      "leftFoot": player.equipped.leftFoot? inventoryItemFromId(player.equipped.leftFoot): null,
+      "rightFoot": player.equipped.rightFoot? inventoryItemFromId(player.equipped.rightFoot): null
+      
+    }
+  }
+
+  // TODO FIX THIS create better compare functionality (clone?)  inventory update event?
   /**
     * @type {Watcher<WorldState, any>[]}
    */
-  const watchers = [new Watcher((state) => state.players[networkHandler.clientId], (oldPlayer, newPlayer) => {
+  const watchers = [new Watcher((state) => {
+    return state.players[networkHandler.clientId]
+  }
+    , (oldPlayer, newPlayer) => {
+    console.log("oldPlayer", oldPlayer);
+    console.log("newPlayer", newPlayer);
     // inventory.updatePlayer(newPlayer);
+    let player = newPlayer;
+    if (inventory instanceof Inventory) {
+      const inventoryItems = player.inventory.map(inventoryItemFromId);
+      const equippedItems = equippedItemsFromPlayer(player);
+      console.log("Updating inventory!");
+      inventory.update(inventoryItems, equippedItems)
+    }
   })]
+  //get invetorny items from ids.  (get item by id... set as inventory item)
   /**
    *
    * @param {number} now
@@ -257,7 +303,7 @@ export async function run() {
         return;
       }
       let player = worldState.players[networkHandler.clientId];
-      console.log("player position", player.characterPos_w);
+      //console.log("player position", player.characterPos_w);
       let tileSize = worldState.map.tileSize();
 
       let mapSize = worldState.map.size().mul(tileSize);
@@ -271,7 +317,7 @@ export async function run() {
         localMoveTarget,
         viewportOrigin_w
       );
-      console.log("moveTarget", moveTarget);
+      //console.log("moveTarget", moveTarget);
       networkHandler.sendEvent({
         type: "moveTarget",
         moveTarget,
@@ -284,11 +330,11 @@ export async function run() {
         type: "monsterUpdateAction",
         monsters: worldState.monsters,
       });
-      console.log("last state:", networkHandler.stateAtLastConnect);
-      console.log(
+      //console.log("last state:", networkHandler.stateAtLastConnect);
+      /*console.log(
         "events since last connect: ",
         networkHandler.eventsSinceLastConnect
-      );
+      );*/
     }
 
     const oldWatches = watchers.map((w) => w.get(worldState));

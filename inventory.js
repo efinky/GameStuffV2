@@ -6,7 +6,6 @@
 
 import { Player } from "./player.js";
 import { Item } from "./item.js";
-import { WorldState, serializer } from "./worldState.js";
 import { dispatch } from "./events.js";
 
 const template = document.createElement("template");

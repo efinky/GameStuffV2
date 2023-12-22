@@ -127,7 +127,9 @@ export class WorldState {
 
   /** @param {Vector2d} pos */
   getItemOnGround(pos) {
-    return this.itemsOnGround.find((e) => e.pos.distance(pos) < 32);
+    let tileSize = this.map.tileSize();
+    const item = this.itemsOnGround.find((e) => e.pos.mul(tileSize).distance(pos) < (tileSize.magnitude() / 2));
+    return item;
   }
 
   /**
