@@ -12,6 +12,43 @@ import { transitionError } from "./ui-state.js";
 import { NetworkedGame } from "../lib/networking/networked-game.js";
 import { Server } from "../lib/networking/server.js";
 
+import { draw } from "../draw/draw.js";
+import { WorldState } from "../game-state/worldState.js";
+import { Inventory } from "../game-state/inventory.js";
+import { Vector2d } from "../lib/vector2d/vector2d.js";
+
+/**
+ *
+ * @param {number} timeSinceLastUpdate
+ * @param {CanvasRenderingContext2D} context
+ * @param {string} clientId
+ * @param {WorldState} worldState
+ * @param {import("./ui-state.js").WorldEvent[]} outputEvents
+ */
+function onFrame(
+  timeSinceLastUpdate,
+  context,
+  clientId,
+  worldState,
+  outputEvents
+) {
+  draw(context, worldState, clientId);
+}
+
+/** @param {MouseEvent} mouseEvent */
+function getCanvasMousePos(mouseEvent) {
+  console.log(mouseEvent);
+  if (!mouseEvent.target || !(mouseEvent.target instanceof ResponsiveCanvasElement)) {
+    return null;
+  }
+
+  const rect = mouseEvent.target.getBoundingClientRect();
+  return new Vector2d(
+    mouseEvent.clientX - rect.left,
+    mouseEvent.clientY - rect.top
+  );
+}
+
 /**
  * @param {HTMLElement} element
  * @param {import("./ui-state.js").PlayingState} state
@@ -22,6 +59,8 @@ export function renderPlaying(element, state) {
     element,
     html`
       <responsive-canvas id="canvas"></responsive-canvas>
+      <player-inventory id="inventory"></player-inventory>
+
       <button class="settings-btn" id="settingsButton" title="Settings">
         ⚙️
       </button>
@@ -79,10 +118,10 @@ export function renderPlaying(element, state) {
     settingsButton: HTMLButtonElement,
     settingsDialog: HTMLDialogElement,
     canvas: ResponsiveCanvasElement,
-    // scoreboard: HTMLDivElement,
+    inventory: Inventory,
   });
 
-  const { settingsDialog, scoreboard, canvas } = elements;
+  const { settingsDialog, canvas, inventory } = elements;
 
   if (NetworkedGame.debug && state.networkedGame.isHost) {
     const { collectDiagnostics } = findElements(node, {
@@ -141,15 +180,15 @@ export function renderPlaying(element, state) {
   });
 
   // state.networkedGame.addWatcher(
-  //   () => JSON.stringify(state.gameState.scores),
+  //   () => JSON.stringify(state.worldState.scores),
   //   (_prev, _next) => {
-  //     renderScoreboard(scoreboard, state.gameState);
+  //     renderScoreboard(scoreboard, state.worldState);
   //   }
   // );
-  // renderScoreboard(scoreboard, state.gameState);
+  // renderScoreboard(scoreboard, state.worldState);
 
   // state.networkedGame.addWatcher(
-  //   () => state.gameState.scores[state.networkedGame.clientId]?.playerName,
+  //   () => state.worldState.scores[state.networkedGame.clientId]?.playerName,
   //   (_prev, next) => {
   //     elements.playerName.setAttribute("value", next);
   //   }
@@ -168,17 +207,77 @@ export function renderPlaying(element, state) {
         timeSinceLastUpdate,
         context,
         state.networkedGame.clientId,
-        state.gameState,
+        state.worldState,
         outputEvents
       );
     }
   });
 
-  const { onkeydown, onkeyup } = keyHandlers((event) => {
-    state.networkedGame.sendEvent(event);
+  // const { onkeydown, onkeyup } = keyHandlers((event) => {
+  //   state.networkedGame.sendEvent(event);
+  // });
+
+  canvas.addEventListener("keydown", (event) => {
+    if (event.key == "i") {
+      inventory.toggle();
+      event.preventDefault();
+    } else if (event.key == "g") {
+      state.networkedGame.sendEvent({
+        type: "pickupItem",
+      });
+
+      event.preventDefault();
+    } else if (event.key == "a") {
+      //find direction player is facing
+      //get bounding box for where character is facing
+      //search character list for any character in that bounding box.
+      // console.log("dir",worldState.player.direction);
+      // console.log("position", worldState.player.characterPos_w);
+      // console.log("lastVel", worldState.player.lastVelocity);
+      // Events.dispatch(Events.PlayerAttack);
+      state.networkedGame.sendEvent({
+        type: "attack",
+      });
+      event.preventDefault();
+    }
   });
-
-  canvas.addEventListener("keydown", onkeydown);
-
-  canvas.addEventListener("keyup", onkeyup);
+  canvas.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+  });
+  canvas.addEventListener("mousedown", (event) => {
+    if (event.button == 0) {
+      const cPos = getCanvasMousePos(event);
+      console.log(cPos);
+      if (!cPos) {
+        return;
+      }
+      state.networkedGame.sendEvent({
+        type: "moveTarget",
+        moveTarget: cPos,
+      });
+      event.stopPropagation();
+    }
+  });
+  canvas.addEventListener("mouseup", (event) => {
+    if (event.button == 0) {
+      state.networkedGame.sendEvent({
+        type: "moveTarget",
+        moveTarget: null,
+      });
+    }
+  });
+  canvas.addEventListener("mousemove", (event) => {
+    if (event.button == 0) {
+      const cPos = getCanvasMousePos(event);
+      console.log(cPos);
+      if (!cPos) {
+        return;
+      }
+      state.networkedGame.sendEvent({
+        type: "moveTarget",
+        moveTarget: cPos,
+      });
+      event.stopPropagation();
+    }
+  });
 }

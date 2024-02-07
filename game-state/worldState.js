@@ -14,7 +14,7 @@ import { PCG32 } from "../lib/pcg/pcg.js";
 /** @typedef {import("../game-state/character.js").EquippableSlot}  EquippableSlot */
 // import someData from "./test.json" assert { type: "json" };
 
-/** @typedef {{type: "pickupItem", id: number}} PickupAction */
+/** @typedef {{type: "pickupItem"}} PickupAction */
 /** @typedef {{type: "dropItem", id: number}} DropAction */
 /** @typedef {{type: "equipItem", id: number, slot: EquippableSlot}} EquipAction */
 /** @typedef {{type: "unEquipItem", slot: EquippableSlot}} UnEquipAction */
@@ -279,16 +279,23 @@ export class WorldState {
       }
       case "pickupItem": {
         const player = this.players[clientId];
-        const itemId = peerEvent.id;
-        // Find item in itemsOnGround, remove it from itemsOnGround, and add it to player's inventory
-        const itemIndex = this.itemsOnGround.findIndex((e) => e.id === itemId);
-        if (itemIndex === -1) {
-          console.log("item not found");
-          break;
+        const itemId = this.getItemOnGround(player.characterPos_w)?.id;
+        console.log(itemId);
+        if (itemId){
+          const itemIndex = this.itemsOnGround.findIndex((e) => e.id === itemId);
+          if (itemIndex === -1) {
+            console.log("item not found");
+            break;
+          }
+          const item = this.itemsOnGround[itemIndex];
+          player.pickupItem(item.id);
+          this.itemsOnGround.splice(itemIndex, 1);
         }
-        const item = this.itemsOnGround[itemIndex];
-        player.pickupItem(item.id);
-        this.itemsOnGround.splice(itemIndex, 1);
+        else {
+          console.log("No Items for you! (error... item was a holagram)");
+        }
+        // Find item in itemsOnGround, remove it from itemsOnGround, and add it to player's inventory
+        
         break;
       }
       case "dropItem": {

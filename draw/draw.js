@@ -13,23 +13,16 @@ import { WorldState } from "../game-state/worldState.js";
 //get a better person/add animation as well.
 /**
    *
+   * @param {CanvasRenderingContext2D} ctx
    * @param {WorldState} worldState
    * @param {string} localClientId
 
    */
-export function draw(worldState, localClientId) {
-  let canvas = document.getElementById("canvas");
-  if (!(canvas instanceof HTMLCanvasElement)) {
-    return;
-  }
-  let ctx = canvas.getContext("2d");
-  if (!ctx) {
-    return null;
-  }
+export function draw(ctx, worldState, localClientId) {
   let tileSize = worldState.map.tileSize();
 
   let mapSize = worldState.map.size().mul(tileSize);
-  let canvasSize = new Vector2d(canvas.width, canvas.height);
+  let canvasSize = new Vector2d(ctx.canvas.width, ctx.canvas.height);
   let mapRect = new Rect(new Vector2d(0, 0), mapSize.sub(canvasSize));
 
   let player = worldState.players[localClientId];

@@ -1,5 +1,5 @@
 import { Character } from "../game-state/character.js";
-import { Vector2d } from "./vector2d.js";
+import { Vector2d } from "../lib/vector2d/vector2d.js";
 
 /**
  * @param {Vector2d} viewportOrigin_w
