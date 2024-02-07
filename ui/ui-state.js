@@ -12,7 +12,7 @@ import { hostGame, joinGame, singlePlayerGame } from "./ui-actions.js";
  *   ui_state: "playing";
  *   joinLink: string;
  *   isHost: boolean;
- *   networkedGame: NetworkedGame<PlayerAction, WorldEvent, WorldState>;
+ *   networkedGame: NetworkedGame;
  *   worldState: WorldState;
  * }} PlayingState
  */
@@ -49,7 +49,7 @@ export const transitionJoinMenu = (token) => (state) => {
 
 /**
  * @param {string} joinToken
- * @param {NetworkedGame<PlayerAction, WorldEvent, WorldState>} networkedGame
+ * @param {NetworkedGame} networkedGame
  * @param {WorldState} worldState
  * @returns {(state: State) => PlayingState}
  */

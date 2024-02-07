@@ -139,7 +139,7 @@ export class WorldState {
    * @param {{map: string, playerSet: string, monsterSet: string}} assetJson
    */
   static async init(assetJson) {
-    const assets = await this.loadAssets(assetJson);
+    const assets = await WorldState.loadAssets(assetJson);
     const worldState = new WorldState(assets, assetJson);
     worldState.loadMapItems(assets.items);
 
@@ -258,9 +258,11 @@ export class WorldState {
   /**
    *
    * @param {string} clientId
-   * @param {PlayerAction} peerEvent
+   * @param {string} event
    */
-  onEvent(clientId, peerEvent) {
+  onEvent(clientId, event) {
+    /** @type {PlayerAction} */
+    const peerEvent = serializer.parse(event);
     switch (peerEvent.type) {
       case "moveTarget":
         {
@@ -329,7 +331,7 @@ export class WorldState {
   static async deserialize(json) {
     const obj = serializer.parse(json);
     const assetJson = obj.assetJson;
-    const assets = await this.loadAssets(assetJson);
+    const assets = await WorldState.loadAssets(assetJson);
     obj.map = assets.map;
     obj.playerSet = assets.playerSet;
     obj.monsterSet = assets.monsterSet;
@@ -348,6 +350,7 @@ export class WorldState {
       itemsOnGround: this.itemsOnGround,
       otherPlayersMonsters: {},
       time: this.time,
+      outputEvents: [],
     });
   }
 }

@@ -3,6 +3,7 @@ import { NetworkedGame } from "../lib/networking/networked-game.js";
 //import { loadAudioAssets } from "../tank/assets.js";
 import { WorldState } from "../game-state/worldState.js";
 import { transitionError, transitionPlaying } from "./ui-state.js";
+import { connect, listen } from "../lib/webrtc-sockets/webrtc-sockets.js";
 
 let initialWorldState = {
     map: "../assets/BasicMap.json",
@@ -25,7 +26,9 @@ export async function singlePlayerGame() {
 export async function hostGame() {
   try {
     const gameState = await WorldState.init(initialWorldState);
-    const { networkedGame, token } = await NetworkedGame.hostGame(gameState);
+    const { token, start: startListen } = await listen();
+    const { networkedGame, onConnect} = await NetworkedGame.hostGame(gameState);
+    const { stop } = await startListen({ onConnect });
 
     return transitionPlaying(token, networkedGame, gameState);
   } catch (err) {
@@ -57,9 +60,11 @@ export async function joinGame(joinToken) {
       }
     }
 
+    let channel = await connect(joinToken);
+
     // If identity was undefined we'll get a new one back
     const { networkedGame, identity, gameState } = await NetworkedGame.joinGame(
-      joinToken,
+      channel,
       WorldState.deserialize,
       existingIdentity
     );

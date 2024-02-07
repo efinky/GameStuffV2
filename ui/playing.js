@@ -13,9 +13,10 @@ import { NetworkedGame } from "../lib/networking/networked-game.js";
 import { Server } from "../lib/networking/server.js";
 
 import { draw } from "../draw/draw.js";
-import { WorldState } from "../game-state/worldState.js";
+import { WorldState, serializer } from "../game-state/worldState.js";
 import { Inventory } from "../game-state/inventory.js";
 import { Vector2d } from "../lib/vector2d/vector2d.js";
+import { Rect } from "../lib/vector2d/rect.js";
 
 /**
  *
@@ -161,9 +162,15 @@ export function renderPlaying(element, state) {
     navigator.clipboard.writeText(joinLink);
   });
 
+  /** @param {import("../game-state/worldState.js").PlayerAction} event */
+  function sendEvent(event) {
+    const serializedEvent = serializer.stringify(event);
+    state.networkedGame.sendEvent(serializedEvent);
+  }
+
   const playerName = localStorage.getItem("playerName");
   if (playerName) {
-    state.networkedGame.sendEvent({
+    sendEvent({
       type: "setPlayerName",
       playerName,
     });
@@ -173,7 +180,7 @@ export function renderPlaying(element, state) {
     // set player name in Local Storage
     localStorage.setItem("playerName", this.value);
 
-    state.networkedGame.sendEvent({
+    sendEvent({
       type: "setPlayerName",
       playerName: this.value,
     });
@@ -198,7 +205,7 @@ export function renderPlaying(element, state) {
     const { context, time } = e.detail;
 
     const { disconnected, timeSinceLastUpdate, outputEvents } =
-      state.networkedGame.update(time);
+      state.networkedGame.update(state.worldState);
 
     if (disconnected) {
       dispatch(transitionError("Disconnected from game"));
@@ -222,8 +229,8 @@ export function renderPlaying(element, state) {
       inventory.toggle();
       event.preventDefault();
     } else if (event.key == "g") {
-      state.networkedGame.sendEvent({
-        type: "pickupItem",
+      sendEvent({
+        type: "pickupItem"
       });
 
       event.preventDefault();
@@ -235,7 +242,7 @@ export function renderPlaying(element, state) {
       // console.log("position", worldState.player.characterPos_w);
       // console.log("lastVel", worldState.player.lastVelocity);
       // Events.dispatch(Events.PlayerAttack);
-      state.networkedGame.sendEvent({
+      sendEvent({
         type: "attack",
       });
       event.preventDefault();
@@ -244,38 +251,64 @@ export function renderPlaying(element, state) {
   canvas.addEventListener("contextmenu", (event) => {
     event.preventDefault();
   });
+  let mouseDown = false;
   canvas.addEventListener("mousedown", (event) => {
     if (event.button == 0) {
-      const cPos = getCanvasMousePos(event);
-      console.log(cPos);
+      const cPos = new Vector2d(event.offsetX, event.offsetY);
+      let tileSize = state.worldState.map.tileSize();
+      let mapSize = state.worldState.map.size().mul(tileSize);
+      let canvasSize = new Vector2d(canvas.width(), canvas.height());
+      let mapRect = new Rect(new Vector2d(0, 0), mapSize.sub(canvasSize));
+      let player = state.worldState.players[state.networkedGame.clientId];
+      let viewportOrigin_w = player.characterPos_w
+        .sub(canvasSize.scale(0.5))
+        .clamp(mapRect);
+      const moveTarget = state.worldState.map.viewportToWorld(
+        cPos,
+        viewportOrigin_w
+      );
+      console
       if (!cPos) {
         return;
       }
-      state.networkedGame.sendEvent({
+      mouseDown = true;
+      sendEvent({
         type: "moveTarget",
-        moveTarget: cPos,
+        moveTarget,
       });
       event.stopPropagation();
     }
   });
   canvas.addEventListener("mouseup", (event) => {
     if (event.button == 0) {
-      state.networkedGame.sendEvent({
+      mouseDown = false;
+      sendEvent({
         type: "moveTarget",
         moveTarget: null,
       });
     }
   });
   canvas.addEventListener("mousemove", (event) => {
-    if (event.button == 0) {
-      const cPos = getCanvasMousePos(event);
-      console.log(cPos);
+    if (event.buttons === 1) {
+      const cPos = new Vector2d(event.offsetX, event.offsetY);
+      let tileSize = state.worldState.map.tileSize();
+      let mapSize = state.worldState.map.size().mul(tileSize);
+      let canvasSize = new Vector2d(canvas.width(), canvas.height());
+      let mapRect = new Rect(new Vector2d(0, 0), mapSize.sub(canvasSize));
+      let player = state.worldState.players[state.networkedGame.clientId];
+      let viewportOrigin_w = player.characterPos_w
+        .sub(canvasSize.scale(0.5))
+        .clamp(mapRect);
+      const moveTarget = state.worldState.map.viewportToWorld(
+        cPos,
+        viewportOrigin_w
+      );
       if (!cPos) {
         return;
       }
-      state.networkedGame.sendEvent({
+      sendEvent({
         type: "moveTarget",
-        moveTarget: cPos,
+        moveTarget,
       });
       event.stopPropagation();
     }
