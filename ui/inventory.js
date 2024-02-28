@@ -4,9 +4,11 @@
 /** @typedef {{ id: number, image: HTMLImageElement, item: Item }} InventoryItem */
 /** @typedef {Record<EquippableSlot, InventoryItem|null>} EquippedItems */
 
-import { Player } from "./player.js";
-import { Item } from "./item.js";
+import { Player } from "../game-state/player.js";
+import { Item } from "../game-state/item.js";
 import { dispatch } from "../events.js";
+
+/** @typedef  { CustomEvent<{ inventoryItem: InventoryItem, slot: EquippableSlot }>} InventoryEvent */
 
 const template = document.createElement("template");
 template.innerHTML = `
@@ -231,6 +233,7 @@ export class Inventory extends HTMLElement {
       this.dialog.close();
     } else {
       this.dialog.showModal();
+      // this.dialog.show();
     }
   }
 
@@ -323,7 +326,8 @@ export class Inventory extends HTMLElement {
     this.draggedItem = null;
     this.#update();
 
-    this.dispatchEvent(new CustomEvent("equip-from-inventory", { detail: { inventoryItem, slot } }));
+    const event = new CustomEvent("equip-from-inventory", { detail: { inventoryItem, slot } });
+    this.dispatchEvent(event);
   }
 
   /**
@@ -353,7 +357,7 @@ export class Inventory extends HTMLElement {
 
     this.draggedItem = null;
     this.#update();
-    this.dispatchEvent(new CustomEvent("equip-from-slot", { detail: { inventoryItem, slot: newSlot } }));
+    this.dispatchEvent(new CustomEvent("equip-from-slot", { detail: { inventoryItem, newSlot, oldSlot } }));
   }
 
   /**

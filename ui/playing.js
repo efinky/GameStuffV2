@@ -14,7 +14,7 @@ import { Server } from "../lib/networking/server.js";
 
 import { draw } from "../draw/draw.js";
 import { WorldState, serializer } from "../game-state/worldState.js";
-import { Inventory } from "../game-state/inventory.js";
+import { Inventory } from "./inventory.js";
 import { Vector2d } from "../lib/vector2d/vector2d.js";
 import { Rect } from "../lib/vector2d/rect.js";
 
@@ -39,7 +39,10 @@ function onFrame(
 /** @param {MouseEvent} mouseEvent */
 function getCanvasMousePos(mouseEvent) {
   console.log(mouseEvent);
-  if (!mouseEvent.target || !(mouseEvent.target instanceof ResponsiveCanvasElement)) {
+  if (
+    !mouseEvent.target ||
+    !(mouseEvent.target instanceof ResponsiveCanvasElement)
+  ) {
     return null;
   }
 
@@ -207,6 +210,40 @@ export function renderPlaying(element, state) {
     const { disconnected, timeSinceLastUpdate, outputEvents } =
       state.networkedGame.update(state.worldState);
 
+    const itemMap = (/** @type {number} */ id) => {
+      let item = state.worldState.items[id];
+      let image = /** @type {HTMLImageElement} */ (
+        state.worldState.itemImages[item.tileNumber].cloneNode(false)
+      );
+      return { id, image, item };
+    };
+
+    for (const event of outputEvents) {
+      if (
+        event.type === "inventoryUpdated" &&
+        event.clientId === state.networkedGame.clientId
+      ) {
+        const equippedItems =
+          state.worldState.players[state.networkedGame.clientId].equipped;
+        const playerInventory =
+          state.worldState.players[state.networkedGame.clientId].inventory.map(
+            itemMap
+          );
+        let playerEquipped = {
+          head: equippedItems.head === null ? null : itemMap(equippedItems.head),
+          leftHand: equippedItems.leftHand === null ? null : itemMap(equippedItems.leftHand),
+          rightHand: equippedItems.rightHand === null ? null : itemMap(equippedItems.rightHand),
+          torso: equippedItems.torso === null ? null : itemMap(equippedItems.torso),
+          legs: equippedItems.legs === null ? null : itemMap(equippedItems.legs),
+          leftFoot: equippedItems.leftFoot === null ? null : itemMap(equippedItems.leftFoot),
+          rightFoot: equippedItems.rightFoot === null ? null : itemMap(equippedItems.rightFoot),
+        };
+        console.log("playerInventory", playerInventory);
+        console.log("playerEquipped", playerEquipped);
+        inventory.update(playerInventory, playerEquipped);
+      }
+    }
+
     if (disconnected) {
       dispatch(transitionError("Disconnected from game"));
     } else {
@@ -224,24 +261,47 @@ export function renderPlaying(element, state) {
   //   state.networkedGame.sendEvent(event);
   // });
 
-  canvas.addEventListener("keydown", (event) => {
+  //Make types happy
+  //fix events
+  //fix equip from slot
+
+  /** @param {import("./inventory.js").InventoryEvent} event */
+  const equipFromInventory = (event) => {
+    sendEvent({
+      type: "equipItem",
+      slot: event.detail.slot,
+      id: event.detail.inventoryItem.id,
+    });
+  }
+  
+  inventory.addEventListener("equip-from-inventory", equipFromInventory);
+
+  inventory.addEventListener("equip-from-slot", (event) => {
+    sendEvent({
+      type: "equipItemFromSlot",
+      newSlot: event.detail.newSlot,
+      oldSlot: event.detail.oldSlot,
+    });
+  });
+  inventory.addEventListener("unequip", (event) => {
+    sendEvent({
+      type: "unEquipItem",
+      slot: event.detail.slot,
+    });
+  });
+
+  window.addEventListener("keydown", (event) => {
     if (event.key == "i") {
       inventory.toggle();
       event.preventDefault();
     } else if (event.key == "g") {
       sendEvent({
-        type: "pickupItem"
+        type: "pickupItem",
       });
 
       event.preventDefault();
     } else if (event.key == "a") {
-      //find direction player is facing
-      //get bounding box for where character is facing
-      //search character list for any character in that bounding box.
-      // console.log("dir",worldState.player.direction);
-      // console.log("position", worldState.player.characterPos_w);
-      // console.log("lastVel", worldState.player.lastVelocity);
-      // Events.dispatch(Events.PlayerAttack);
+      
       sendEvent({
         type: "attack",
       });
@@ -267,7 +327,7 @@ export function renderPlaying(element, state) {
         cPos,
         viewportOrigin_w
       );
-      console
+      console;
       if (!cPos) {
         return;
       }

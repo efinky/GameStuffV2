@@ -17,8 +17,9 @@ import { PCG32 } from "../lib/pcg/pcg.js";
 /** @typedef {{type: "pickupItem"}} PickupAction */
 /** @typedef {{type: "dropItem", id: number}} DropAction */
 /** @typedef {{type: "equipItem", id: number, slot: EquippableSlot}} EquipAction */
+/** @typedef {{type: "equipItemFromSlot", id: number, newSlot: EquippableSlot, oldSlot: EquippableSlot}} EquipFromSlotAction */
 /** @typedef {{type: "unEquipItem", slot: EquippableSlot}} UnEquipAction */
-/** @typedef {PickupAction|DropAction|EquipAction|UnEquipAction} InventoryAction */
+/** @typedef {PickupAction|DropAction|EquipAction|EquipFromSlotAction|UnEquipAction} InventoryAction */
 
 /** @typedef {{type: "moveTarget", moveTarget: Vector2d|null}} MovementAction */
 /** @typedef {{type: "attack"}} AttackAction */
@@ -26,7 +27,7 @@ import { PCG32 } from "../lib/pcg/pcg.js";
 /** @typedef {MovementAction|AttackAction|MonsterUpdateAction|InventoryAction} PlayerAction */
 
 
-/** @typedef {{type: "inventoryUpdated, clientId: string"}} InventoryOutput */
+/** @typedef {{type: "inventoryUpdated", clientId: string}} InventoryOutput */
 /** @typedef {InventoryOutput} WorldEvent */
 
 
@@ -297,7 +298,7 @@ export class WorldState {
           console.log("No Items for you! (error... item was a holagram)");
         }
         // Find item in itemsOnGround, remove it from itemsOnGround, and add it to player's inventory
-        
+        this.outputEvents.push({ type: "inventoryUpdated", clientId });
         break;
       }
       case "dropItem": {
@@ -306,6 +307,7 @@ export class WorldState {
         if (player.dropItem(itemId)) {
           this.itemsOnGround.push({ pos: player.characterPos_w, id: itemId });
         }
+        this.outputEvents.push({ type: "inventoryUpdated", clientId });
         break;
       }
       case "equipItem": {
@@ -313,12 +315,22 @@ export class WorldState {
         const itemId = peerEvent.id;
         const slot = peerEvent.slot;
         player.equipItem(itemId, slot);
+        this.outputEvents.push({ type: "inventoryUpdated", clientId });
         break;
       }
       case "unEquipItem": {
         const player = this.players[clientId];
         const slot = peerEvent.slot;
-        player.unequipItem(slot);
+        player.unEquipItem(slot);
+        this.outputEvents.push({ type: "inventoryUpdated", clientId });
+        break;
+      }
+      case "equipItemFromSlot" : {
+        const player = this.players[clientId];
+        const oldSlot = peerEvent.oldSlot;
+        const newSlot = peerEvent.newSlot;
+        player.equipFromSlot(oldSlot, newSlot);
+        this.outputEvents.push({type: "inventoryUpdated", clientId});
         break;
       }
     }

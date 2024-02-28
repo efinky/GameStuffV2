@@ -179,14 +179,39 @@ export class Character {
      * @param {EquippableSlot} slot 
      */
     equipItem(itemID, slot) {
+        this.unEquipItem(slot);
         this.equipped[slot] = itemID;
+        const index = this.inventory.indexOf(itemID);
+        if (index != -1) {
+            this.inventory.splice(index, 1);
+        }
+        else {
+            console.log(itemID, " does not exist");
+        }
     }
+    
     /**
      * 
      * @param {EquippableSlot} slot 
      */
-    unequipItem(slot) {
+    unEquipItem(slot) {
+        const equipped = this.equipped[slot];
+        if (equipped != null) {
+            this.inventory.push(equipped);
+        }
         this.equipped[slot] = null;
+    }
+
+    /**
+     * 
+     * @param {EquippableSlot} oldSlot 
+     * @param {EquippableSlot} newSlot 
+     */
+    equipFromSlot(oldSlot, newSlot) {
+        this.unEquipItem(newSlot);
+        const movingItem = this.equipped[oldSlot];
+        this.equipped[newSlot] = movingItem;
+        this.equipped[oldSlot] = null;
     }
 
 }

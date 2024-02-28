@@ -4,7 +4,7 @@ import { Vector2d } from "./vector2d.js";
 import { Rect } from "./rect.js";
 import { WorldMap } from "./game-state/worldMap.js";
 import { PlayerSet as CharacterSet } from "./tileset/playerSet.js";
-import { Inventory } from "./game-state/inventory.js";
+import { Inventory } from "./ui/inventory.js";
 import { WorldState, serializer } from "./game-state/worldState.js";
 import * as Events from "./events.js";
 import { moveMonsters, movePlayer } from "./game-state/movement.js";
