@@ -8,6 +8,17 @@ import { Player } from "../game-state/player.js";
 import { Item } from "../game-state/item.js";
 import { dispatch } from "../events.js";
 
+/**
+ * Custom event map type with specific events and their payloads.
+ * @typedef {Object} CustomEventMap
+ * @property {CustomEvent<{inventoryItem: InventoryItem, slot: EquippableSlot}>} equip-from-inventory
+ * @property {CustomEvent<{newSlot: EquippableSlot, oldSlot: EquippableSlot}>} equip-from-slot
+ * @property {CustomEvent<{inventoryItem: InventoryItem, slot: EquippableSlot}>} drop-from-slot
+ * @property {CustomEvent<{inventoryItem: InventoryItem}>} drop-from-inventory
+ * @property {CustomEvent<{slot: EquippableSlot}>} unequip
+ */
+
+
 /** @typedef  { CustomEvent<{ inventoryItem: InventoryItem, slot: EquippableSlot }>} InventoryEvent */
 
 const template = document.createElement("template");
@@ -104,8 +115,7 @@ template.innerHTML = `
             <div id="personRightFoot" style="grid-area: rightfoot;"></div>
         </div>
     </div>
-    
-</dialog>
+  </dialog>
 `;
 
 //Need to Dispatch drop and equip and unequip.
@@ -214,6 +224,29 @@ export class Inventory extends HTMLElement {
     this.inventoryBox = inventoryBox;
   }
 
+
+
+  /**
+  * Adds an event listener to the Inventory.
+  * @template {keyof CustomEventMap} K
+  * @param {K} type - The event type to listen for, where K is a key of CustomEventMap.
+  * @param {(this: Inventory, ev: CustomEventMap[K]) => void} listener - The function to call when the event is fired.
+  */
+  addEventListener(type, listener) {
+    // @ts-ignore
+    super.addEventListener(type, listener);
+  }
+
+  /**
+  * Dispatches an event from the Inventory.
+  * @template {keyof CustomEventMap} K
+  * @param {CustomEventMap[K]} ev - The event to dispatch, where K is a key of CustomEventMap.
+  */
+  dispatchEvent(ev) {
+    // @ts-ignore
+    return super.dispatchEvent(ev);
+  }
+
   connectedCallback() {
     this.init();
   }
@@ -238,6 +271,32 @@ export class Inventory extends HTMLElement {
   }
 
   init() {
+    this.dialog.addEventListener("dragover", (event) => {
+      event.preventDefault();
+    });
+    this.dialog.addEventListener("dragenter", (event) => {
+      event.preventDefault();
+    });
+    this.dialog.addEventListener("drop", (event) => {
+      event.preventDefault();
+      if (!this.draggedItem || !(event.target instanceof HTMLElement)) {
+        return;
+      }
+      // event.target?.classList?.remove("dragHover");
+      const item = this.draggedItem.inventoryItem;
+      const source = this.draggedItem.source;
+      this.draggedItem = null;
+
+      if (source == "inventory") {
+        // if the source of the item is the player's inventory
+        this.dispatchEvent(new CustomEvent("drop-from-inventory", { detail: { inventoryItem: item } }));
+
+      } else {
+        // otherwise the source of the item is another player's equipped items
+        this.dispatchEvent(new CustomEvent("drop-from-slot", { detail: { inventoryItem: item, slot: source } }));
+      }
+    });
+
     this.inventoryBox.addEventListener("dragover", (event) => {
       if (
         this.inventoryBox != event.target ||

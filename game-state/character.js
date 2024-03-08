@@ -158,21 +158,7 @@ export class Character {
     pickupItem(itemID) {
         this.inventory.push(itemID);
     }
-    /**
-     * 
-     * @param {number} itemID 
-     */
-    dropItem(itemID) {
-        const index = this.inventory.indexOf(itemID);
-        if (index != -1) {
-            this.inventory.splice(index, 1);
-            return true;
-        }
-        else {
-            console.log(itemID, " does not exist");
-            return false;
-        }
-    }
+    
     /**
      * 
      * @param {number} itemID 
@@ -181,6 +167,14 @@ export class Character {
     equipItem(itemID, slot) {
         this.unEquipItem(slot);
         this.equipped[slot] = itemID;
+        this.removeFromInventory(itemID)
+        
+    }
+    /**
+     * 
+     * @param {number} itemID 
+     */
+    removeFromInventory(itemID)  {
         const index = this.inventory.indexOf(itemID);
         if (index != -1) {
             this.inventory.splice(index, 1);
@@ -188,6 +182,13 @@ export class Character {
         else {
             console.log(itemID, " does not exist");
         }
+    }
+    /**
+     * 
+     * @param {EquippableSlot} slot 
+     */
+    removeFromSlot(slot) {
+        this.equipped[slot] = null;
     }
     
     /**
@@ -199,7 +200,7 @@ export class Character {
         if (equipped != null) {
             this.inventory.push(equipped);
         }
-        this.equipped[slot] = null;
+        this.removeFromSlot(slot);
     }
 
     /**
@@ -211,7 +212,7 @@ export class Character {
         this.unEquipItem(newSlot);
         const movingItem = this.equipped[oldSlot];
         this.equipped[newSlot] = movingItem;
-        this.equipped[oldSlot] = null;
+        this.removeFromSlot(oldSlot);
     }
 
 }

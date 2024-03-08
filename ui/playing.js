@@ -273,7 +273,22 @@ export function renderPlaying(element, state) {
       id: event.detail.inventoryItem.id,
     });
   }
-  
+
+  inventory.addEventListener("drop-from-inventory", (event) => {
+    sendEvent({
+      type: "dropItemFromInventory",
+      id: event.detail.inventoryItem.id,
+    });
+  });
+
+  inventory.addEventListener("drop-from-slot", (event) => {
+    sendEvent({
+      type: "dropItemFromSlot",
+      slot: event.detail.slot,
+      id: event.detail.inventoryItem.id,
+    });
+  });
+
   inventory.addEventListener("equip-from-inventory", equipFromInventory);
 
   inventory.addEventListener("equip-from-slot", (event) => {

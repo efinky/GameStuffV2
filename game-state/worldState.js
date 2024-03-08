@@ -15,16 +15,18 @@ import { PCG32 } from "../lib/pcg/pcg.js";
 // import someData from "./test.json" assert { type: "json" };
 
 /** @typedef {{type: "pickupItem"}} PickupAction */
-/** @typedef {{type: "dropItem", id: number}} DropAction */
+/** @typedef {{type: "dropItemFromInventory", id: number}} DropItemFromInventoryAction */
+/** @typedef {{type: "dropItemFromSlot", id: number, slot: EquippableSlot}} DropItemFromSlotAction */
 /** @typedef {{type: "equipItem", id: number, slot: EquippableSlot}} EquipAction */
-/** @typedef {{type: "equipItemFromSlot", id: number, newSlot: EquippableSlot, oldSlot: EquippableSlot}} EquipFromSlotAction */
+/** @typedef {{type: "equipItemFromSlot", newSlot: EquippableSlot, oldSlot: EquippableSlot}} EquipFromSlotAction */
 /** @typedef {{type: "unEquipItem", slot: EquippableSlot}} UnEquipAction */
-/** @typedef {PickupAction|DropAction|EquipAction|EquipFromSlotAction|UnEquipAction} InventoryAction */
+/** @typedef {PickupAction|DropItemFromInventoryAction|DropItemFromSlotAction|EquipAction|EquipFromSlotAction|UnEquipAction} InventoryAction */
 
 /** @typedef {{type: "moveTarget", moveTarget: Vector2d|null}} MovementAction */
 /** @typedef {{type: "attack"}} AttackAction */
 /** @typedef {{type: "monsterUpdateAction", monsters: Monster[]}} MonsterUpdateAction */
-/** @typedef {MovementAction|AttackAction|MonsterUpdateAction|InventoryAction} PlayerAction */
+/** @typedef {{type: "setPlayerName", playerName: string}} UpdatePlayerNameAction */
+/** @typedef {MovementAction|AttackAction|MonsterUpdateAction|InventoryAction|UpdatePlayerNameAction} PlayerAction */
 
 
 /** @typedef {{type: "inventoryUpdated", clientId: string}} InventoryOutput */
@@ -155,6 +157,15 @@ export class WorldState {
     );
     return item;
   }
+  /**
+   * 
+   * @param {Vector2d} pos 
+   * @param {number} itemId 
+   */
+  //Change item time... probably wrong item type?
+  dropItemOnGround(pos, itemId) {
+    this.itemsOnGround.push({pos: pos, id: itemId})
+  }
 
   /**
    *
@@ -265,6 +276,11 @@ export class WorldState {
     /** @type {PlayerAction} */
     const peerEvent = serializer.parse(event);
     switch (peerEvent.type) {
+      case "setPlayerName":
+        {
+          this.players[clientId].name = peerEvent.playerName;
+        }
+        break;
       case "moveTarget":
         {
           // Add move target onto player
@@ -301,15 +317,6 @@ export class WorldState {
         this.outputEvents.push({ type: "inventoryUpdated", clientId });
         break;
       }
-      case "dropItem": {
-        const player = this.players[clientId];
-        const itemId = peerEvent.id;
-        if (player.dropItem(itemId)) {
-          this.itemsOnGround.push({ pos: player.characterPos_w, id: itemId });
-        }
-        this.outputEvents.push({ type: "inventoryUpdated", clientId });
-        break;
-      }
       case "equipItem": {
         const player = this.players[clientId];
         const itemId = peerEvent.id;
@@ -331,6 +338,23 @@ export class WorldState {
         const newSlot = peerEvent.newSlot;
         player.equipFromSlot(oldSlot, newSlot);
         this.outputEvents.push({type: "inventoryUpdated", clientId});
+        break;
+      }
+      case "dropItemFromSlot" : {
+        const player = this.players[clientId];
+        const slot = peerEvent.slot;
+        const itemId = peerEvent.id;
+        player.removeFromSlot(slot);
+        this.dropItemOnGround(player.characterPos_w, itemId);
+        this.outputEvents.push({ type: "inventoryUpdated", clientId });
+        break;
+      }
+      case "dropItemFromInventory" : {
+        const player = this.players[clientId];
+        const itemId = peerEvent.id;
+        player.removeFromInventory(itemId);
+        this.dropItemOnGround(player.characterPos_w, itemId);
+        this.outputEvents.push({ type: "inventoryUpdated", clientId });
         break;
       }
     }
